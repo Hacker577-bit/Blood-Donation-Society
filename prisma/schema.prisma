@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Area {
+  JoharTown
+  DHA
+  Gulberg
+  ModelTown
+  BahriaTown
+  Cantt
+  IqbalTown
+  GardenTown
+  WapdaTown
+  FaisalTown
+}
+
+enum BloodType {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+}
+
+model Donor {
+  id               String      @id @default(cuid())
+  name             String
+  phone            String      @unique
+  email            String?
+  bloodType        BloodType
+  lastDonationDate DateTime?   @db.Date
+  isVerified       Boolean     @default(false)
+  areas            DonorArea[]
+}
+
+model DonorArea {
+  donorId String
+  area    Area
+  donor   Donor  @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  @@id([donorId, area])
+}
+
+model Search {
+  id            String    @id @default(cuid())
+  searcherName  String
+  searcherPhone String
+  bloodType     BloodType
+  area          Area
+  createdAt     DateTime  @default(now())
+}
