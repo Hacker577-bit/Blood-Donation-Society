@@ -28,6 +28,11 @@ if (process.env.NODE_ENV !== "production") {
 
 export const twilioOtpSender: OtpSender = {
   async send(phone, code) {
+    if (process.env.SKIP_OTP_VERIFICATION === "true") {
+      console.log(`[DEV] OTP for ${phone}: ${code}`);
+      return;
+    }
+
     await twilioClient.messages.create({
       to: phone,
       from: process.env.TWILIO_FROM_NUMBER,
