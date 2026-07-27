@@ -20,3 +20,14 @@ export async function createSearch(
     select: { id: true },
   });
 }
+
+/** Single round trip for the area-expansion fan-out, which writes one row per area searched. */
+export async function createSearches(
+  inputs: CreateSearchInput[],
+): Promise<void> {
+  if (inputs.length === 0) {
+    return;
+  }
+
+  await prisma.search.createMany({ data: inputs });
+}

@@ -6,14 +6,26 @@ import { Button } from "@/app/components/ui/Button";
 import { AreaChip } from "@/app/components/ui/AreaChip";
 import { AREA_VALUES, BLOOD_TYPE_VALUES } from "@/lib/validation/registerDonor";
 import { AREA_LABELS, BLOOD_TYPE_LABELS } from "@/lib/presentation/labels";
+import { getNearbyAreas } from "@/lib/domain/areaAdjacency";
 import { submitSearch } from "@/app/actions/submitSearch";
+import { expandSearch } from "@/app/actions/expandSearch";
 
-type Step = "form" | "results";
+type Step = "form" | "expand" | "results" | "empty";
 
 interface Match {
   name: string;
   phone: string;
   area: string;
+  /** Present only for expansion results: every searched area this donor was found in. */
+  matchedAreas?: string[];
+}
+
+/**
+ * Display label for an Area enum value. Falls back to the raw code rather than rendering
+ * `undefined` — the cast alone would let an unrecognised value reach user-facing copy silently.
+ */
+function areaLabel(area: string) {
+  return AREA_LABELS[area as keyof typeof AREA_LABELS] ?? area;
 }
 
 function SkeletonRow({ index }: { index: number }) {
@@ -49,7 +61,9 @@ function MatchCard({ match }: { match: Match }) {
       >
         {copied ? "Copied" : match.phone}
       </a>
-      <span className="text-meta text-ink-secondary">{AREA_LABELS[match.area as keyof typeof AREA_LABELS]}</span>
+      <span className="text-meta text-ink-secondary">
+        {(match.matchedAreas ?? [match.area]).map(areaLabel).join(", ")}
+      </span>
     </div>
   );
 }
@@ -65,6 +79,8 @@ function SearchForm() {
   const [area, setArea] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [areasSearched, setAreasSearched] = useState<string[]>([]);
+  const [didExpand, setDidExpand] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -89,6 +105,8 @@ function SearchForm() {
     setIsSubmitting(true);
     setErrorCode(null);
     setErrorMessage(null);
+    setDidExpand(false);
+    setAreasSearched([]);
     try {
       const result = await submitSearch({
         sessionToken,
@@ -104,27 +122,152 @@ function SearchForm() {
       }
 
       setMatches(result.matches);
-      setStep("results");
+      setStep(result.matches.length === 0 ? "expand" : "results");
+    } catch {
+      setErrorCode("UNEXPECTED");
+      setErrorMessage("Something went wrong on our end. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  async function handleExpand() {
+    setIsSubmitting(true);
+    setErrorCode(null);
+    setErrorMessage(null);
+    try {
+      const result = await expandSearch({
+        sessionToken,
+        searcherName,
+        bloodType,
+        originArea: area,
+      });
+
+      if ("error" in result) {
+        setErrorCode(result.error.code);
+        setErrorMessage(result.error.message);
+        return;
+      }
+
+      setMatches(result.matches);
+      setAreasSearched(result.areasSearched);
+      setDidExpand(true);
+      setStep(result.matches.length === 0 ? "empty" : "results");
+    } catch {
+      setErrorCode("UNEXPECTED");
+      setErrorMessage("Something went wrong on our end. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // A spent or invalid session cannot be retried from this screen — re-verification is the only
+  // way forward, so the action is disabled rather than left inviting rate-limited dead clicks.
+  const isSessionTerminal =
+    errorCode === "SESSION_INVALID" || errorCode === "SESSION_EXHAUSTED";
+
+  const errorBlock = errorCode && (
+    <p role="alert" className="text-meta text-status-error">
+      {errorMessage}
+      {isSessionTerminal && (
+        <>
+          {" "}
+          <a href="/search/verify" className="text-accent underline-offset-2 hover:underline">
+            Verify your phone again
+          </a>
+        </>
+      )}
+    </p>
+  );
+
+  const skeletonBlock = isSubmitting && (
+    <div className="flex flex-col gap-4">
+      {[0, 1, 2].map((i) => (
+        <SkeletonRow key={i} index={i} />
+      ))}
+    </div>
+  );
+
+  if (step === "expand") {
+    const nearbyLabels = getNearbyAreas(area!).map(
+      (a) => AREA_LABELS[a as keyof typeof AREA_LABELS],
+    );
+
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
+        <h1 className="text-heading text-ink-primary">
+          We couldn&apos;t find a match in {AREA_LABELS[area as keyof typeof AREA_LABELS]} yet.
+        </h1>
+        <p className="text-body text-ink-secondary">
+          We can also check nearby areas: {nearbyLabels.join(", ")}.
+        </p>
+
+        {skeletonBlock}
+        {errorBlock}
+
+        <Button
+          type="button"
+          onClick={handleExpand}
+          disabled={isSessionTerminal}
+          loading={isSubmitting}
+          loadingText="Searching…"
+        >
+          Search nearby areas
+        </Button>
+      </main>
+    );
+  }
+
   if (step === "results") {
+    // Every area that actually produced a match — drawn from matchedAreas, not the deduped
+    // primary area, so an area is never reported as empty because a donor also matched elsewhere.
+    const matchedAreaLabels = [
+      ...new Set(matches.flatMap((m) => m.matchedAreas ?? [m.area])),
+    ].map(areaLabel);
+
     return (
       <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
         <h1 className="text-heading text-ink-primary">Matches</h1>
-        {matches.length === 0 ? (
-          <p className="text-body text-ink-secondary">
-            No matches were found in this area yet.
+        {didExpand && (
+          <p data-testid="matched-areas-summary" className="text-meta text-ink-secondary">
+            Found in {matchedAreaLabels.join(", ")}.
           </p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {matches.map((match) => (
-              <MatchCard key={match.phone} match={match} />
-            ))}
-          </div>
         )}
+        <div className="flex flex-col gap-4">
+          {matches.map((match) => (
+            <MatchCard key={match.phone} match={match} />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (step === "empty") {
+    // "Gulberg" / "Gulberg and Model Town" / "Gulberg, Model Town and Cantt" — one list with a
+    // single conjunction. areasSearched is [] when the origin area has no neighbours, which the
+    // one-item branch already covers.
+    const checkedLabels = [areaLabel(area!), ...areasSearched.map(areaLabel)];
+    const checkedPhrase =
+      checkedLabels.length > 1
+        ? `${checkedLabels.slice(0, -1).join(", ")} and ${checkedLabels[checkedLabels.length - 1]}`
+        : checkedLabels[0];
+
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
+        <h1 className="text-heading text-ink-primary">No match found yet.</h1>
+        <p data-testid="empty-state-body" className="text-body text-ink-secondary">
+          We checked {checkedPhrase}, and no eligible donor is listed for{" "}
+          {BLOOD_TYPE_LABELS[bloodType as keyof typeof BLOOD_TYPE_LABELS]} right now.
+        </p>
+        <p className="text-body text-ink-secondary">
+          To try a different area, verify your phone again.
+        </p>
+        <a
+          href="/search/verify"
+          className="inline-flex w-fit min-h-[44px] items-center text-body text-accent underline underline-offset-2"
+        >
+          Start a new search
+        </a>
       </main>
     );
   }
@@ -169,29 +312,14 @@ function SearchForm() {
           </div>
         </div>
 
-        {isSubmitting && (
-          <div className="flex flex-col gap-4">
-            {[0, 1, 2].map((i) => (
-              <SkeletonRow key={i} index={i} />
-            ))}
-          </div>
-        )}
+        {skeletonBlock}
+        {errorBlock}
 
-        {errorCode && (errorCode === "SESSION_INVALID" || errorCode === "SESSION_EXHAUSTED") && (
-          <p role="alert" className="text-meta text-status-error">
-            {errorMessage}{" "}
-            <a href="/search/verify" className="text-accent underline-offset-2 hover:underline">
-              Verify your phone again
-            </a>
-          </p>
-        )}
-        {errorCode && errorCode !== "SESSION_INVALID" && errorCode !== "SESSION_EXHAUSTED" && (
-          <p role="alert" className="text-meta text-status-error">
-            {errorMessage}
-          </p>
-        )}
-
-        <Button disabled={!isValid} loading={isSubmitting} loadingText="Searching…">
+        <Button
+          disabled={!isValid || isSessionTerminal}
+          loading={isSubmitting}
+          loadingText="Searching…"
+        >
           Search
         </Button>
       </form>

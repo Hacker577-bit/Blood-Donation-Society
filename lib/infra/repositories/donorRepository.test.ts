@@ -16,6 +16,7 @@ vi.mock("@/lib/infra/prisma", () => ({
 
 import {
   createDonor,
+  findDonorByPhone,
   findDonorWithAreas,
   findVerifiedDonorsByBloodTypeAndArea,
 } from "./donorRepository";
@@ -126,6 +127,56 @@ describe("donorRepository.findDonorWithAreas", () => {
     const result = await findDonorWithAreas("missing");
 
     expect(result).toBeNull();
+  });
+});
+
+describe("donorRepository.findDonorByPhone", () => {
+  beforeEach(() => {
+    donorFindUniqueMock.mockReset();
+  });
+
+  it("queries by the unique phone column and returns the donor record", async () => {
+    donorFindUniqueMock.mockResolvedValue({
+      id: "donor_1",
+      phone: "+923001234567",
+      isVerified: true,
+    });
+
+    const result = await findDonorByPhone("+923001234567");
+
+    expect(donorFindUniqueMock).toHaveBeenCalledWith({
+      where: { phone: "+923001234567" },
+      select: { id: true, phone: true, isVerified: true },
+    });
+    expect(result).toEqual({
+      id: "donor_1",
+      phone: "+923001234567",
+      isVerified: true,
+    });
+  });
+
+  it("returns null when no donor holds that phone number", async () => {
+    donorFindUniqueMock.mockResolvedValue(null);
+
+    const result = await findDonorByPhone("+923009999999");
+
+    expect(result).toBeNull();
+  });
+
+  it("surfaces an unverified donor rather than hiding it, so callers decide", async () => {
+    donorFindUniqueMock.mockResolvedValue({
+      id: "donor_2",
+      phone: "+923011234567",
+      isVerified: false,
+    });
+
+    const result = await findDonorByPhone("+923011234567");
+
+    expect(result).toEqual({
+      id: "donor_2",
+      phone: "+923011234567",
+      isVerified: false,
+    });
   });
 });
 

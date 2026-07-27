@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-07
-last_updated: 2026-07-12
+last_updated: 2026-07-26
 project: BloodDonorApp
 project_key: NOKEY
 tracking_system: file-system
@@ -58,12 +58,12 @@ development_status:
   epic-2: in-progress
   2-1-searcher-verifies-identity-via-otp: done
   2-2-searcher-submits-search-views-matches-and-matched-donors-are-notified: review
-  2-3-system-suggests-nearby-area-expansion-on-no-match: backlog
-  2-4-system-shows-empty-state-when-no-match-found: backlog
+  2-3-system-suggests-nearby-area-expansion-on-no-match: done
+  2-4-system-shows-empty-state-when-no-match-found: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
-  3-1-donor-starts-a-self-service-session-via-otp: backlog
+  epic-3: in-progress
+  3-1-donor-starts-a-self-service-session-via-otp: review
   3-2-donor-updates-last-donation-date: backlog
   3-3-donor-deletes-registration: backlog
   epic-3-retrospective: optional

@@ -61,6 +61,15 @@ export async function findDonorById(id: string): Promise<DonorRecord | null> {
   });
 }
 
+export async function findDonorByPhone(
+  phone: string,
+): Promise<DonorRecord | null> {
+  return prisma.donor.findUnique({
+    where: { phone },
+    select: { id: true, phone: true, isVerified: true },
+  });
+}
+
 export async function activateDonor(id: string): Promise<void> {
   await prisma.donor.update({
     where: { id },
