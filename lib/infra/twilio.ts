@@ -6,7 +6,11 @@ const globalForTwilio = globalThis as unknown as {
   twilioClient?: ReturnType<typeof twilio>;
 };
 
-function createTwilioClient(): ReturnType<typeof twilio> {
+function getTwilioClient(): ReturnType<typeof twilio> {
+  if (globalForTwilio.twilioClient) {
+    return globalForTwilio.twilioClient;
+  }
+
   if (
     !process.env.TWILIO_ACCOUNT_SID ||
     !process.env.TWILIO_AUTH_TOKEN ||
@@ -17,13 +21,13 @@ function createTwilioClient(): ReturnType<typeof twilio> {
     );
   }
 
-  return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-}
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-export const twilioClient = globalForTwilio.twilioClient ?? createTwilioClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForTwilio.twilioClient = client;
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForTwilio.twilioClient = twilioClient;
+  return client;
 }
 
 export const twilioOtpSender: OtpSender = {
@@ -33,7 +37,8 @@ export const twilioOtpSender: OtpSender = {
       return;
     }
 
-    await twilioClient.messages.create({
+    const client = getTwilioClient();
+    await client.messages.create({
       to: phone,
       from: process.env.TWILIO_FROM_NUMBER,
       body: `Your Lifeline Lahore verification code is ${code}. It expires in 5 minutes.`,
@@ -43,7 +48,13 @@ export const twilioOtpSender: OtpSender = {
 
 export const twilioNotificationSender: SmsNotifier = {
   async send(phone, message) {
-    await twilioClient.messages.create({
+    if (process.env.SKIP_OTP_VERIFICATION === "true") {
+      console.log(`[DEV] Notification to ${phone}: ${message}`);
+      return;
+    }
+
+    const client = getTwilioClient();
+    await client.messages.create({
       to: phone,
       from: process.env.TWILIO_FROM_NUMBER,
       body: message,
