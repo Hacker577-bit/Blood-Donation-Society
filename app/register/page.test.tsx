@@ -3,18 +3,32 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const createDonorMock = vi.fn();
+const findDonorByGoogleIdMock = vi.fn();
 const pushMock = vi.fn();
+
+let currentSession: { user: { id: string; name?: string; email?: string } | null } = {
+  user: { id: "google-sub-1", name: "Priya Sharma", email: "priya@example.com" },
+};
+
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: currentSession, status: "authenticated" }),
+}));
 
 vi.mock("@/lib/infra/repositories/donorRepository", () => ({
   createDonor: (...args: unknown[]) => createDonorMock(...args),
+  findDonorByGoogleId: (...args: unknown[]) => findDonorByGoogleIdMock(...args),
+}));
+
+vi.mock("@/lib/auth", () => ({
+  auth: async () => currentSession,
 }));
 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
 
-vi.mock("@vercel/functions", () => ({
-  ipAddress: () => "198.51.100.77",
+vi.mock("@/lib/infra/requestIp", () => ({
+  getRequestIp: () => "198.51.100.77",
 }));
 
 vi.mock("@/lib/infra/rateLimitStore", () => ({
@@ -36,7 +50,26 @@ import DonorRegistrationPage from "./page";
 describe("Donor Registration screen", () => {
   beforeEach(() => {
     createDonorMock.mockReset();
+    findDonorByGoogleIdMock.mockReset();
+    findDonorByGoogleIdMock.mockResolvedValue(null);
     pushMock.mockReset();
+    currentSession = { user: { id: "google-sub-1", name: "Priya Sharma", email: "priya@example.com" } };
+  });
+
+  it("prompts the user to sign in with Google when there is no session", () => {
+    currentSession = { user: null };
+
+    render(<DonorRegistrationPage />);
+
+    expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+  });
+
+  it("prefills the name and email from the Google session", () => {
+    render(<DonorRegistrationPage />);
+
+    expect(screen.getByLabelText("Name")).toHaveValue("Priya Sharma");
+    expect(screen.getByLabelText(/Email/)).toHaveValue("priya@example.com");
   });
 
   it("keeps Submit disabled until required fields are valid, then enables it", async () => {
@@ -46,7 +79,6 @@ describe("Donor Registration screen", () => {
     const submit = screen.getByRole("button", { name: "Submit" });
     expect(submit).toBeDisabled();
 
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));
@@ -78,13 +110,12 @@ describe("Donor Registration screen", () => {
   it("never blocks submission because the email field is blank", async () => {
     const user = userEvent.setup();
     createDonorMock.mockResolvedValue({ id: "donor_1" });
+    currentSession = { user: { id: "google-sub-1", name: "Priya Sharma", email: "" } };
     render(<DonorRegistrationPage />);
 
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));
-    // leave email blank
 
     const submit = screen.getByRole("button", { name: "Submit" });
     await waitFor(() => expect(submit).toBeEnabled());
@@ -121,7 +152,6 @@ describe("Donor Registration screen", () => {
     );
     render(<DonorRegistrationPage />);
 
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));
@@ -133,7 +163,9 @@ describe("Donor Registration screen", () => {
     expect(await screen.findByRole("button", { name: "Sending…" })).toBeInTheDocument();
 
     resolveCreate({ id: "donor_1" });
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/register/verify?donorId=donor_1"));
+    await waitFor(() =>
+      expect(pushMock).toHaveBeenCalledWith("/register/confirmation?donorId=donor_1"),
+    );
   });
 
   it("renders a visible spinner element while submitting, not just a text swap", async () => {
@@ -141,7 +173,6 @@ describe("Donor Registration screen", () => {
     createDonorMock.mockReturnValue(new Promise(() => {}));
     render(<DonorRegistrationPage />);
 
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));
@@ -186,7 +217,6 @@ describe("Donor Registration screen", () => {
     createDonorMock.mockRejectedValue({ code: "P2002", meta: { target: ["phone"] } });
     render(<DonorRegistrationPage />);
 
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));
@@ -207,11 +237,6 @@ describe("Donor Registration screen", () => {
     createDonorMock.mockRejectedValue({ code: "P2002", meta: { target: ["donorId", "area"] } });
     render(<DonorRegistrationPage />);
 
-    // Not exercised through a real rate-limit rejection here (that's covered
-    // by registerDonor.test.ts) — this verifies the form renders a non-field
-    // submission error near Submit, the same path a RATE_LIMITED response
-    // (which has no fieldErrors) would take.
-    await user.type(screen.getByLabelText("Name"), "Priya Sharma");
     await user.type(screen.getByLabelText("Phone number"), "+923001234567");
     await user.selectOptions(screen.getByLabelText("Blood type"), "B_POS");
     await user.click(screen.getByRole("checkbox", { name: "Model Town" }));

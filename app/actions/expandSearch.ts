@@ -1,17 +1,14 @@
 "use server";
 
-import { headers } from "next/headers";
 import { after } from "next/server";
-import { ipAddress } from "@vercel/functions";
+import { auth } from "@/lib/auth";
+import { getRequestIp } from "@/lib/infra/requestIp";
 import { expandSearchSchema } from "@/lib/validation/expandSearch";
 import { checkRateLimit } from "@/lib/domain/rate-limit";
-import { verifySessionToken, consumeSessionUse } from "@/lib/domain/session";
 import { findMatchesAcrossAreas, type ExpandedDonorMatch } from "@/lib/domain/matching";
 import { getNearbyAreas } from "@/lib/domain/areaAdjacency";
 import { notifyMatches } from "@/lib/domain/notify";
 import { redisRateLimitStore } from "@/lib/infra/rateLimitStore";
-import { joseTokenSigner } from "@/lib/infra/jwt";
-import { redisSessionBudgetStore } from "@/lib/infra/sessionStore";
 import * as donorRepository from "@/lib/infra/repositories/donorRepository";
 import { createSearches } from "@/lib/infra/repositories/searchRepository";
 import { twilioNotificationSender } from "@/lib/infra/twilio";
@@ -42,7 +39,18 @@ interface ActionSuccess {
 export type ExpandSearchResult = ActionSuccess | ActionError;
 
 export async function expandSearch(input: unknown): Promise<ExpandSearchResult> {
-  const ip = ipAddress(await headers()) ?? "unknown";
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      error: {
+        code: "UNAUTHENTICATED",
+        message: "Please sign in with Google to search for blood.",
+      },
+    };
+  }
+
+  const ip = await getRequestIp();
   const rateLimitResult = await checkRateLimit(
     { ip, endpoint: "expandSearch" },
     redisRateLimitStore,
@@ -80,46 +88,7 @@ export async function expandSearch(input: unknown): Promise<ExpandSearchResult> 
     };
   }
 
-  const sessionToken =
-    typeof inputRecord.sessionToken === "string" ? inputRecord.sessionToken : "";
-  const verifiedToken = await verifySessionToken(sessionToken, joseTokenSigner);
-
-  if (!verifiedToken) {
-    return {
-      error: {
-        code: "SESSION_INVALID",
-        message: "Your session has expired. Please verify your phone again.",
-      },
-    };
-  }
-
-  const budgetResult = await consumeSessionUse(verifiedToken.jti, redisSessionBudgetStore);
-
-  if (!budgetResult.allowed) {
-    return {
-      error: {
-        code: "SESSION_EXHAUSTED",
-        message: "This search session has been used up. Please verify your phone again.",
-      },
-    };
-  }
-
-  // AD-4 defines the Searcher budget as "submit the search, plus at most one area-expansion
-  // re-search" — so an expansion is always the FINAL unit. Budget left over means the initial
-  // search never ran, i.e. this call skipped submitSearch. Rejecting here stops a caller from
-  // going straight to expansion and notifying every donor across an area's 2-6 neighbours for
-  // the same budget unit that buys one area through the front door.
-  if (budgetResult.remaining > 0) {
-    return {
-      error: {
-        code: "SESSION_INVALID",
-        message: "Start a search before expanding to nearby areas.",
-      },
-    };
-  }
-
-  const { searcherName, bloodType, originArea } = parsed.data;
-  const searcherPhone = verifiedToken.subject;
+  const { searcherName, searcherPhone, bloodType, originArea } = parsed.data;
   const nearbyAreas = getNearbyAreas(originArea);
 
   if (nearbyAreas.length === 0) {
@@ -131,12 +100,6 @@ export async function expandSearch(input: unknown): Promise<ExpandSearchResult> 
     donorRepository,
   );
 
-  // One row per area actually searched, recording the real extent of the expansion. Note this does
-  // NOT make SM-3 ("% of Searches producing >=1 Match") computable — Search has no match count,
-  // result flag, or correlation id, so no row granularity would. It also inflates any naive
-  // Search-row count for expansion journeys. Recording is an audit concern: a write failure must
-  // never cost the searcher their matches or the matched donors their notification, so it is
-  // logged, not thrown.
   try {
     await createSearches(
       nearbyAreas.map((area) => ({
@@ -144,6 +107,7 @@ export async function expandSearch(input: unknown): Promise<ExpandSearchResult> 
         searcherPhone,
         bloodType: bloodType as BloodType,
         area: area as Area,
+        correlationId: parsed.data.correlationId,
       })),
     );
   } catch (err) {

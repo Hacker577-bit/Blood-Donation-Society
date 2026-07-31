@@ -1,9 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
-import { ipAddress } from "@vercel/functions";
+import { auth } from "@/lib/auth";
+import { getRequestIp } from "@/lib/infra/requestIp";
 import { registerDonorSchema } from "@/lib/validation/registerDonor";
-import { createDonor } from "@/lib/infra/repositories/donorRepository";
+import {
+  createDonor,
+  findDonorByGoogleId,
+} from "@/lib/infra/repositories/donorRepository";
 import { checkRateLimit } from "@/lib/domain/rate-limit";
 import { redisRateLimitStore } from "@/lib/infra/rateLimitStore";
 import type { Area, BloodType } from "@/lib/generated/prisma/client";
@@ -53,7 +56,24 @@ function getPhoneUniqueConstraintError(
 export async function registerDonor(
   input: unknown,
 ): Promise<RegisterDonorResult> {
-  const ip = ipAddress(await headers()) ?? "unknown";
+  const session = await auth();
+  const googleId = session?.user?.id ?? null;
+
+  if (!googleId) {
+    return {
+      error: {
+        code: "UNAUTHENTICATED",
+        message: "Please sign in with Google to register as a donor.",
+      },
+    };
+  }
+
+  const existingDonor = await findDonorByGoogleId(googleId);
+  if (existingDonor) {
+    return { donorId: existingDonor.id };
+  }
+
+  const ip = await getRequestIp();
   const rateLimitResult = await checkRateLimit(
     { ip, endpoint: "registerDonor" },
     redisRateLimitStore,
@@ -93,6 +113,7 @@ export async function registerDonor(
 
   try {
     const donor = await createDonor({
+      googleId,
       name: data.name,
       phone: data.phone,
       bloodType: data.bloodType as BloodType,
@@ -101,6 +122,7 @@ export async function registerDonor(
       lastDonationDate: data.lastDonationDate
         ? new Date(data.lastDonationDate)
         : null,
+      isVerified: true,
     });
 
     return { donorId: donor.id };

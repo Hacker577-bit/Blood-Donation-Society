@@ -4,13 +4,11 @@ import userEvent from "@testing-library/user-event";
 
 const submitSearchMock = vi.fn();
 const expandSearchMock = vi.fn();
-const replaceMock = vi.fn();
-let searchParamsValue = new URLSearchParams({
-  sessionToken: "signed-jwt",
-  name: "Zara Ahmed",
-});
 let matchMediaCoarse = false;
 const writeTextMock = vi.fn();
+let currentSession: { user: { id: string; name?: string; email?: string } | null } = {
+  user: { id: "google-sub-1", name: "Zara Ahmed", email: "zara@example.com" },
+};
 
 vi.mock("@/app/actions/submitSearch", () => ({
   submitSearch: (...args: unknown[]) => submitSearchMock(...args),
@@ -21,20 +19,19 @@ vi.mock("@/app/actions/expandSearch", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: replaceMock }),
-  useSearchParams: () => searchParamsValue,
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: currentSession, status: "authenticated" }),
 }));
 
 beforeEach(() => {
   submitSearchMock.mockReset();
   expandSearchMock.mockReset();
-  replaceMock.mockReset();
-  searchParamsValue = new URLSearchParams({
-    sessionToken: "signed-jwt",
-    name: "Zara Ahmed",
-  });
   matchMediaCoarse = false;
   writeTextMock.mockReset();
+  currentSession = { user: { id: "google-sub-1", name: "Zara Ahmed", email: "zara@example.com" } };
 
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -64,20 +61,29 @@ function setupUserWithClipboardSpy() {
 }
 
 describe("Search screen", () => {
-  it("redirects to /search/verify when sessionToken is missing from the query string", async () => {
-    searchParamsValue = new URLSearchParams({ name: "Zara Ahmed" });
+  it("prompts the user to sign in with Google when there is no session", () => {
+    currentSession = { user: null };
+
     render(<SearchPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/search/verify"));
+    expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search" })).not.toBeInTheDocument();
   });
 
-  it("keeps Submit disabled until a blood type and area are chosen", async () => {
+  it("prefills the name from the Google session", () => {
+    render(<SearchPage />);
+
+    expect(screen.getByLabelText("Your name")).toHaveValue("Zara Ahmed");
+  });
+
+  it("keeps Submit disabled until a phone, blood type and area are provided", async () => {
     const user = userEvent.setup();
     render(<SearchPage />);
 
     const submit = screen.getByRole("button", { name: "Search" });
     expect(submit).toBeDisabled();
 
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
 
     await waitFor(() => expect(submit).toBeEnabled());
@@ -111,6 +117,7 @@ describe("Search screen", () => {
       }),
     );
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -126,18 +133,19 @@ describe("Search screen", () => {
     expect(screen.queryByTestId("skeleton-row")).not.toBeInTheDocument();
   });
 
-  it("submits with the sessionToken/name from the query string and the chosen bloodType/area", async () => {
+  it("submits with the session name, the entered contact phone and the chosen bloodType/area", async () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
 
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await waitFor(() =>
       expect(submitSearchMock).toHaveBeenCalledWith({
-        sessionToken: "signed-jwt",
         searcherName: "Zara Ahmed",
+        searcherPhone: "+923001234567",
         bloodType: "O_NEG",
         area: "Gulberg",
       }),
@@ -148,6 +156,7 @@ describe("Search screen", () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -159,6 +168,7 @@ describe("Search screen", () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -178,15 +188,17 @@ describe("Search screen", () => {
       }),
     );
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
 
     expect(expandSearchMock).toHaveBeenCalledWith({
-      sessionToken: "signed-jwt",
       searcherName: "Zara Ahmed",
+      searcherPhone: "+923001234567",
       bloodType: "O_NEG",
       originArea: "Gulberg",
+      correlationId: expect.any(String),
     });
     expect(screen.getAllByTestId("skeleton-row").length).toBeGreaterThan(0);
 
@@ -207,6 +219,7 @@ describe("Search screen", () => {
       areasSearched: ["ModelTown", "Cantt", "GardenTown", "DHA"],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -224,8 +237,6 @@ describe("Search screen", () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockResolvedValue({
-      // Amara is registered in both Model Town and Cantt; dedup keeps Model Town as her primary
-      // area, so a summary built from `area` alone would wrongly report Cantt as empty.
       matches: [
         {
           name: "Amara",
@@ -237,6 +248,7 @@ describe("Search screen", () => {
       areasSearched: ["ModelTown", "Cantt", "GardenTown", "DHA"],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -255,6 +267,7 @@ describe("Search screen", () => {
       matches: [{ name: "Amara", phone: "+923001111111", area: "Gulberg" }],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -267,6 +280,7 @@ describe("Search screen", () => {
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockResolvedValue({ matches: [], areasSearched: ["ModelTown"] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -285,12 +299,11 @@ describe("Search screen", () => {
       areasSearched: ["ModelTown", "Cantt"],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
 
-    // Pin the whole sentence, not just the substrings: label-presence assertions pass on any
-    // word order, which is how a run-on with two conjunctions shipped green once already.
     const body = await screen.findByTestId("empty-state-body");
     expect(body.textContent).toBe(
       "We checked Gulberg, Model Town and Cantt, and no eligible donor is listed for O- right now.",
@@ -305,6 +318,7 @@ describe("Search screen", () => {
       areasSearched: ["ModelTown", "Cantt", "GardenTown", "DHA"],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -318,11 +332,12 @@ describe("Search screen", () => {
     expect(body.textContent?.match(/ and /g)).toHaveLength(2);
   });
 
-  it("offers exactly one next-step link on the Empty State, pointing at /search/verify", async () => {
+  it("offers exactly one next-step link on the Empty State, pointing at /search", async () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockResolvedValue({ matches: [], areasSearched: ["ModelTown"] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -331,7 +346,7 @@ describe("Search screen", () => {
 
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "/search/verify");
+    expect(links[0]).toHaveAttribute("href", "/search");
     // The only way forward on a dead-end screen: underlined at rest (not colour-only, WCAG 1.4.1)
     // and meeting the >=44px tap-target floor.
     expect(links[0].className).toMatch(/\bunderline\b/);
@@ -343,6 +358,7 @@ describe("Search screen", () => {
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockResolvedValue({ matches: [], areasSearched: ["ModelTown"] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -359,6 +375,7 @@ describe("Search screen", () => {
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockResolvedValue({ matches: [], areasSearched: [] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -377,6 +394,7 @@ describe("Search screen", () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({ matches: [] });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -386,30 +404,11 @@ describe("Search screen", () => {
     expect(screen.queryByRole("heading", { name: /no match found/i })).not.toBeInTheDocument();
   });
 
-  it("shows SESSION_EXHAUSTED from an expansion with a link back to /search/verify", async () => {
-    const user = userEvent.setup();
-    submitSearchMock.mockResolvedValue({ matches: [] });
-    expandSearchMock.mockResolvedValue({
-      error: { code: "SESSION_EXHAUSTED", message: "This search session has been used up." },
-    });
-    render(<SearchPage />);
-    await selectBloodTypeAndArea(user);
-    await user.click(screen.getByRole("button", { name: "Search" }));
-    await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This search session has been used up.",
-    );
-    expect(screen.getByRole("link", { name: /verify/i })).toHaveAttribute(
-      "href",
-      "/search/verify",
-    );
-  });
-
   it("surfaces a recoverable message when the search action rejects outright", async () => {
     const user = userEvent.setup();
     submitSearchMock.mockRejectedValue(new Error("connection lost"));
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
@@ -422,6 +421,7 @@ describe("Search screen", () => {
     submitSearchMock.mockResolvedValue({ matches: [] });
     expandSearchMock.mockRejectedValue(new Error("connection lost"));
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.click(await screen.findByRole("button", { name: "Search nearby areas" }));
@@ -429,40 +429,18 @@ describe("Search screen", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/something went wrong/i);
   });
 
-  it("disables the expand button after a terminal SESSION_EXHAUSTED, so re-clicks cannot burn rate-limit slots", async () => {
-    const user = userEvent.setup();
-    submitSearchMock.mockResolvedValue({ matches: [] });
-    expandSearchMock.mockResolvedValue({
-      error: { code: "SESSION_EXHAUSTED", message: "This search session has been used up." },
-    });
-    render(<SearchPage />);
-    await selectBloodTypeAndArea(user);
-    await user.click(screen.getByRole("button", { name: "Search" }));
-    const expandButton = await screen.findByRole("button", { name: "Search nearby areas" });
-    await user.click(expandButton);
-
-    await screen.findByRole("alert");
-    expect(expandButton).toBeDisabled();
-
-    expandSearchMock.mockClear();
-    await user.click(expandButton);
-    expect(expandSearchMock).not.toHaveBeenCalled();
-  });
-
-  it("shows SESSION_INVALID error with a link back to /search/verify", async () => {
+  it("surfaces a RATE_LIMITED message from the search action without a dead link", async () => {
     const user = userEvent.setup();
     submitSearchMock.mockResolvedValue({
-      error: { code: "SESSION_INVALID", message: "Your session has expired." },
+      error: { code: "RATE_LIMITED", message: "Too many attempts. Please try again shortly." },
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Your session has expired.");
-    expect(screen.getByRole("link", { name: /verify/i })).toHaveAttribute(
-      "href",
-      "/search/verify",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(/too many attempts/i);
+    expect(screen.queryByRole("link", { name: /verify/i })).not.toBeInTheDocument();
   });
 
   it("clicking the phone link under a coarse (touch) pointer does not copy to clipboard", async () => {
@@ -472,6 +450,7 @@ describe("Search screen", () => {
       matches: [{ name: "Amara", phone: "+923001111111", area: "Gulberg" }],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     const phoneLink = await screen.findByRole("link", { name: "+923001111111" });
@@ -488,6 +467,7 @@ describe("Search screen", () => {
       matches: [{ name: "Amara", phone: "+923001111111", area: "Gulberg" }],
     });
     render(<SearchPage />);
+    await user.type(screen.getByLabelText("Contact number"), "+923001234567");
     await selectBloodTypeAndArea(user);
     await user.click(screen.getByRole("button", { name: "Search" }));
     const phoneLink = await screen.findByRole("link", { name: "+923001111111" });

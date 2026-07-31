@@ -2,14 +2,17 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const findMatchesAcrossAreasMock = vi.fn();
 const getNearbyAreasMock = vi.fn();
-const verifySessionTokenMock = vi.fn();
-const consumeSessionUseMock = vi.fn();
 const createSearchesMock = vi.fn();
 const notifyMatchesMock = vi.fn();
 const afterMock = vi.fn();
 
 let currentTestIp = "198.51.100.1";
 let ipCounter = 0;
+let currentSession = { user: { id: "google-sub-search-1", email: "zara@example.com" } };
+
+vi.mock("@/lib/auth", () => ({
+  auth: async () => currentSession,
+}));
 
 vi.mock("@/lib/domain/matching", () => ({
   findMatchesAcrossAreas: (...args: unknown[]) => findMatchesAcrossAreasMock(...args),
@@ -17,11 +20,6 @@ vi.mock("@/lib/domain/matching", () => ({
 
 vi.mock("@/lib/domain/areaAdjacency", () => ({
   getNearbyAreas: (...args: unknown[]) => getNearbyAreasMock(...args),
-}));
-
-vi.mock("@/lib/domain/session", () => ({
-  verifySessionToken: (...args: unknown[]) => verifySessionTokenMock(...args),
-  consumeSessionUse: (...args: unknown[]) => consumeSessionUseMock(...args),
 }));
 
 vi.mock("@/lib/domain/notify", () => ({
@@ -32,8 +30,8 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
 
-vi.mock("@vercel/functions", () => ({
-  ipAddress: () => currentTestIp,
+vi.mock("@/lib/infra/requestIp", () => ({
+  getRequestIp: () => currentTestIp,
 }));
 
 vi.mock("next/server", () => ({
@@ -62,8 +60,6 @@ vi.mock("@/lib/infra/repositories/donorRepository", () => ({
 vi.mock("@/lib/infra/repositories/searchRepository", () => ({
   createSearches: (...args: unknown[]) => createSearchesMock(...args),
 }));
-vi.mock("@/lib/infra/jwt", () => ({ joseTokenSigner: {} }));
-vi.mock("@/lib/infra/sessionStore", () => ({ redisSessionBudgetStore: {} }));
 vi.mock("@/lib/infra/twilio", () => ({ twilioNotificationSender: {} }));
 vi.mock("@/lib/infra/sendgrid", () => ({ sendgridEmailNotifier: {} }));
 
@@ -77,8 +73,8 @@ const { AREA_ADJACENCY, getNearbyAreas: realGetNearbyAreas } =
   );
 
 const VALID_INPUT = {
-  sessionToken: "signed-jwt",
   searcherName: "Zara Ahmed",
+  searcherPhone: "+923001234567",
   bloodType: "O_NEG",
   originArea: "Gulberg",
 };
@@ -87,19 +83,13 @@ describe("expandSearch server action", () => {
   beforeEach(() => {
     findMatchesAcrossAreasMock.mockReset();
     getNearbyAreasMock.mockReset();
-    verifySessionTokenMock.mockReset();
-    consumeSessionUseMock.mockReset();
     createSearchesMock.mockReset();
     notifyMatchesMock.mockReset();
     afterMock.mockReset();
     currentTestIp = `198.51.100.${++ipCounter}`;
+    currentSession = { user: { id: "google-sub-search-1", email: "zara@example.com" } };
 
     getNearbyAreasMock.mockReturnValue(["ModelTown", "Cantt", "GardenTown", "DHA"]);
-    verifySessionTokenMock.mockResolvedValue({
-      subject: "+923009999999",
-      jti: "jti-1",
-    });
-    consumeSessionUseMock.mockResolvedValue({ allowed: true, remaining: 0 });
     findMatchesAcrossAreasMock.mockResolvedValue([
       {
         name: "Amara",
@@ -113,13 +103,33 @@ describe("expandSearch server action", () => {
     notifyMatchesMock.mockResolvedValue(undefined);
   });
 
+  it("returns UNAUTHENTICATED without a Google session", async () => {
+    currentSession = { user: null } as never;
+
+    const result = await expandSearch(VALID_INPUT);
+
+    expect(result).toMatchObject({
+      error: { code: "UNAUTHENTICATED", message: expect.any(String) },
+    });
+    expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
+  });
+
   it("returns VALIDATION_ERROR with fieldErrors for invalid input", async () => {
     const result = await expandSearch({ ...VALID_INPUT, bloodType: "" });
 
     expect(result).toMatchObject({
       error: { code: "VALIDATION_ERROR", fieldErrors: { bloodType: expect.any(String) } },
     });
-    expect(verifySessionTokenMock).not.toHaveBeenCalled();
+    expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when the contact phone is invalid", async () => {
+    const result = await expandSearch({ ...VALID_INPUT, searcherPhone: "nope" });
+
+    expect(result).toMatchObject({
+      error: { code: "VALIDATION_ERROR", fieldErrors: { searcherPhone: expect.any(String) } },
+    });
+    expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
   });
 
   it("returns RATE_LIMITED once the same IP exceeds the threshold", async () => {
@@ -128,48 +138,16 @@ describe("expandSearch server action", () => {
     for (let i = 0; i < 5; i++) {
       await expandSearch(VALID_INPUT);
     }
-    verifySessionTokenMock.mockClear();
+    findMatchesAcrossAreasMock.mockClear();
+    createSearchesMock.mockClear();
 
     const sixth = await expandSearch(VALID_INPUT);
 
     expect(sixth).toMatchObject({ error: { code: "RATE_LIMITED" } });
-    expect(verifySessionTokenMock).not.toHaveBeenCalled();
-  });
-
-  it("returns SESSION_INVALID when the token fails verification", async () => {
-    verifySessionTokenMock.mockResolvedValue(null);
-
-    const result = await expandSearch(VALID_INPUT);
-
-    expect(result).toMatchObject({ error: { code: "SESSION_INVALID" } });
-    expect(consumeSessionUseMock).not.toHaveBeenCalled();
-  });
-
-  it("returns SESSION_EXHAUSTED without recording a search or scheduling notifications", async () => {
-    consumeSessionUseMock.mockResolvedValue({ allowed: false, remaining: 0 });
-
-    const result = await expandSearch(VALID_INPUT);
-
-    expect(result).toMatchObject({ error: { code: "SESSION_EXHAUSTED" } });
     expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
-    expect(createSearchesMock).not.toHaveBeenCalled();
-    expect(afterMock).not.toHaveBeenCalled();
   });
 
-  it("rejects an expansion attempted before any search ran, so it cannot skip submitSearch", async () => {
-    // Budget of 2: an untouched session decrements to 1 remaining. An expansion is always the
-    // final unit, so leftover budget means submitSearch never ran.
-    consumeSessionUseMock.mockResolvedValue({ allowed: true, remaining: 1 });
-
-    const result = await expandSearch(VALID_INPUT);
-
-    expect(result).toMatchObject({ error: { code: "SESSION_INVALID" } });
-    expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
-    expect(createSearchesMock).not.toHaveBeenCalled();
-    expect(afterMock).not.toHaveBeenCalled();
-  });
-
-  it("returns matches plus the areas searched, and consumes the final budget unit exactly once", async () => {
+  it("returns matches plus the areas searched", async () => {
     const result = await expandSearch(VALID_INPUT);
 
     expect(result).toEqual({
@@ -183,8 +161,6 @@ describe("expandSearch server action", () => {
       ],
       areasSearched: ["ModelTown", "Cantt", "GardenTown", "DHA"],
     });
-    expect(consumeSessionUseMock).toHaveBeenCalledTimes(1);
-    expect(consumeSessionUseMock).toHaveBeenCalledWith("jti-1", expect.anything());
     expect(findMatchesAcrossAreasMock).toHaveBeenCalledWith(
       { bloodType: "O_NEG", areas: ["ModelTown", "Cantt", "GardenTown", "DHA"] },
       expect.anything(),
@@ -197,24 +173,22 @@ describe("expandSearch server action", () => {
     expect(result).not.toHaveProperty("matches.0.email");
   });
 
-  it("records one Search row per expanded area in a single batch, always with the token's phone rather than client input", async () => {
-    await expandSearch({ ...VALID_INPUT, searcherPhone: "+923000000000" });
+  it("records one Search row per expanded area in a single batch, always with the searcher's contact phone", async () => {
+    await expandSearch(VALID_INPUT);
 
     expect(createSearchesMock).toHaveBeenCalledTimes(1);
     expect(createSearchesMock).toHaveBeenCalledWith(
       ["ModelTown", "Cantt", "GardenTown", "DHA"].map((area) => ({
         searcherName: "Zara Ahmed",
-        searcherPhone: "+923009999999",
+        searcherPhone: "+923001234567",
         bloodType: "O_NEG",
         area,
+        correlationId: undefined,
       })),
     );
   });
 
   it("short-circuits without repository calls when the origin area has no neighbours", async () => {
-    // Defensive branch only: areaAdjacency.test.ts asserts every production area has >=1 neighbour,
-    // so this state is unreachable today. It guards a future PM edit to the adjacency table
-    // (PRD Open Question 1 is still open), which is why the lookup is forced rather than real.
     getNearbyAreasMock.mockReturnValue([]);
 
     const result = await expandSearch(VALID_INPUT);
@@ -223,7 +197,6 @@ describe("expandSearch server action", () => {
     expect(findMatchesAcrossAreasMock).not.toHaveBeenCalled();
     expect(createSearchesMock).not.toHaveBeenCalled();
     expect(afterMock).not.toHaveBeenCalled();
-    expect(consumeSessionUseMock).toHaveBeenCalledTimes(1);
   });
 
   it("still returns matches and notifies donors when recording the search fails", async () => {
@@ -260,7 +233,7 @@ describe("expandSearch server action", () => {
       [{ name: "Amara", phone: "+923001111111", email: "amara@example.com" }],
       {
         searcherName: "Zara Ahmed",
-        searcherPhone: "+923009999999",
+        searcherPhone: "+923001234567",
         bloodType: "O-",
         area: "Gulberg",
       },
@@ -282,21 +255,15 @@ describe("expandSearch server action", () => {
 });
 
 describe("expandSearch against the real adjacency table", () => {
-  // The suite above mocks getNearbyAreas, so nothing there exercises AREA_ADJACENCY itself.
-  // These use the real table, binding the areas the UI promises to the areas the server searches.
   beforeEach(() => {
     findMatchesAcrossAreasMock.mockReset();
     getNearbyAreasMock.mockReset();
-    verifySessionTokenMock.mockReset();
-    consumeSessionUseMock.mockReset();
     createSearchesMock.mockReset();
     notifyMatchesMock.mockReset();
     afterMock.mockReset();
     currentTestIp = `198.51.100.${++ipCounter}`;
 
     getNearbyAreasMock.mockImplementation((area: string) => realGetNearbyAreas(area));
-    verifySessionTokenMock.mockResolvedValue({ subject: "+923009999999", jti: "jti-1" });
-    consumeSessionUseMock.mockResolvedValue({ allowed: true, remaining: 0 });
     findMatchesAcrossAreasMock.mockResolvedValue([]);
     createSearchesMock.mockResolvedValue(undefined);
     notifyMatchesMock.mockResolvedValue(undefined);

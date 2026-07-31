@@ -28,10 +28,6 @@ export default async function RegistrationConfirmationPage({
     redirect("/register");
   }
 
-  if (!donor.isVerified) {
-    redirect(`/register/verify?donorId=${donorId}`);
-  }
-
   const { isEligible, eligibleAgainOn } = computeEligibility({
     lastDonationDate: donor.lastDonationDate,
   });

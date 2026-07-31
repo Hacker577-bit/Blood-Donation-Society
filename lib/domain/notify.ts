@@ -15,10 +15,30 @@ export interface NotifyMatch {
 export interface NotifyContext {
   searcherName: string;
   searcherPhone: string;
-  /** Human-readable blood type label (e.g. "O-"), not the raw enum value. */
   bloodType: string;
-  /** Human-readable area label (e.g. "Gulberg"). */
   area: string;
+}
+
+function buildSmsMessage(context: NotifyContext): string {
+  return (
+    `URGENT: ${context.searcherName} (${context.searcherPhone}) needs ` +
+    `${context.bloodType} blood in ${context.area}. ` +
+    `Please call them directly if you are able to donate. ` +
+    `Reply to this message is not monitored. – Lifeline Lahore`
+  );
+}
+
+function buildEmailBody(context: NotifyContext): string {
+  return (
+    `Someone in your area needs ${context.bloodType} blood.\n\n` +
+    `Searcher: ${context.searcherName}\n` +
+    `Phone: ${context.searcherPhone}\n` +
+    `Blood type needed: ${context.bloodType}\n` +
+    `Location: ${context.area}\n\n` +
+    `Please call them directly if you are able to help. ` +
+    `Do not reply to this email.\n\n` +
+    `– Lifeline Lahore`
+  );
 }
 
 async function sendSafely(send: () => Promise<void>, label: string): Promise<void> {
@@ -35,11 +55,12 @@ export async function notifyMatches(
   smsNotifier: SmsNotifier,
   emailNotifier: EmailNotifier,
 ): Promise<void> {
-  const message = `${context.searcherName} (${context.searcherPhone}) needs ${context.bloodType} blood in ${context.area}. Call them directly if you're able to help.`;
+  const smsMessage = buildSmsMessage(context);
+  const emailBody = buildEmailBody(context);
 
   const sends = matches.flatMap((match) => {
     const tasks: Array<Promise<void>> = [
-      sendSafely(() => smsNotifier.send(match.phone, message), `SMS to ${match.phone}`),
+      sendSafely(() => smsNotifier.send(match.phone, smsMessage), `SMS to ${match.phone}`),
     ];
 
     if (match.email) {
@@ -48,8 +69,8 @@ export async function notifyMatches(
           () =>
             emailNotifier.send({
               to: match.email as string,
-              subject: "Someone needs your blood type",
-              body: message,
+              subject: `${context.searcherName} needs ${context.bloodType} blood in ${context.area}`,
+              body: emailBody,
             }),
           `email to ${match.email}`,
         ),

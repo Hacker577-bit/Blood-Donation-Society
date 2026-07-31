@@ -1,21 +1,28 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const createDonorMock = vi.fn();
+const findDonorByGoogleIdMock = vi.fn();
 const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 let currentTestIp = "198.51.100.1";
 let ipCounter = 0;
+let currentSession = { user: { id: "google-sub-1", email: "priya@example.com" } };
+
+vi.mock("@/lib/auth", () => ({
+  auth: async () => currentSession,
+}));
 
 vi.mock("@/lib/infra/repositories/donorRepository", () => ({
   createDonor: (...args: unknown[]) => createDonorMock(...args),
+  findDonorByGoogleId: (...args: unknown[]) => findDonorByGoogleIdMock(...args),
 }));
 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
 
-vi.mock("@vercel/functions", () => ({
-  ipAddress: () => currentTestIp,
+vi.mock("@/lib/infra/requestIp", () => ({
+  getRequestIp: () => currentTestIp,
 }));
 
 // Real domain rate-limit logic runs against this in-memory fake, so the
@@ -50,7 +57,10 @@ const validInput = {
 describe("registerDonor server action", () => {
   beforeEach(() => {
     createDonorMock.mockReset();
+    findDonorByGoogleIdMock.mockReset();
+    findDonorByGoogleIdMock.mockResolvedValue(null);
     consoleErrorSpy.mockClear();
+    currentSession = { user: { id: "google-sub-1", email: "priya@example.com" } };
     // Each generic test gets its own IP so the shared in-memory rate-limit
     // store never lets one test's calls count toward another's threshold.
     currentTestIp = `198.51.100.${++ipCounter}`;
@@ -63,6 +73,29 @@ describe("registerDonor server action", () => {
 
     expect(result).toEqual({ donorId: "donor_1" });
     expect(createDonorMock).toHaveBeenCalledTimes(1);
+    expect(createDonorMock).toHaveBeenCalledWith(
+      expect.objectContaining({ googleId: "google-sub-1", isVerified: true }),
+    );
+  });
+
+  it("returns UNAUTHENTICATED when there is no Google session", async () => {
+    currentSession = { user: null } as never;
+
+    const result = await registerDonor(validInput);
+
+    expect(result).toMatchObject({
+      error: { code: "UNAUTHENTICATED", message: expect.any(String) },
+    });
+    expect(createDonorMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the existing donor id without creating a duplicate for an already-registered Google account", async () => {
+    findDonorByGoogleIdMock.mockResolvedValue({ id: "existing-donor" });
+
+    const result = await registerDonor(validInput);
+
+    expect(result).toEqual({ donorId: "existing-donor" });
+    expect(createDonorMock).not.toHaveBeenCalled();
   });
 
   it("returns a field-level error and does not call the repository when blood type is missing", async () => {

@@ -56,3 +56,8 @@ export type DonorArea = Prisma.DonorAreaModel
  * 
  */
 export type Search = Prisma.SearchModel
+/**
+ * Model RateLimitRecord
+ * 
+ */
+export type RateLimitRecord = Prisma.RateLimitRecordModel

@@ -34,6 +34,7 @@ describe("searchRepository.createSearch", () => {
         searcherPhone: "+923009999999",
         bloodType: "O_NEG",
         area: "Gulberg",
+        correlationId: undefined,
       },
       select: { id: true },
     });

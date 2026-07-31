@@ -1,22 +1,20 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const findMatchesMock = vi.fn();
-const verifySessionTokenMock = vi.fn();
-const consumeSessionUseMock = vi.fn();
 const createSearchMock = vi.fn();
 const notifyMatchesMock = vi.fn();
 const afterMock = vi.fn();
 
 let currentTestIp = "198.51.100.1";
 let ipCounter = 0;
+let currentSession = { user: { id: "google-sub-search-1", email: "zara@example.com" } };
+
+vi.mock("@/lib/auth", () => ({
+  auth: async () => currentSession,
+}));
 
 vi.mock("@/lib/domain/matching", () => ({
   findMatches: (...args: unknown[]) => findMatchesMock(...args),
-}));
-
-vi.mock("@/lib/domain/session", () => ({
-  verifySessionToken: (...args: unknown[]) => verifySessionTokenMock(...args),
-  consumeSessionUse: (...args: unknown[]) => consumeSessionUseMock(...args),
 }));
 
 vi.mock("@/lib/domain/notify", () => ({
@@ -27,8 +25,8 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
 
-vi.mock("@vercel/functions", () => ({
-  ipAddress: () => currentTestIp,
+vi.mock("@/lib/infra/requestIp", () => ({
+  getRequestIp: () => currentTestIp,
 }));
 
 vi.mock("next/server", () => ({
@@ -57,16 +55,14 @@ vi.mock("@/lib/infra/repositories/donorRepository", () => ({
 vi.mock("@/lib/infra/repositories/searchRepository", () => ({
   createSearch: (...args: unknown[]) => createSearchMock(...args),
 }));
-vi.mock("@/lib/infra/jwt", () => ({ joseTokenSigner: {} }));
-vi.mock("@/lib/infra/sessionStore", () => ({ redisSessionBudgetStore: {} }));
 vi.mock("@/lib/infra/twilio", () => ({ twilioNotificationSender: {} }));
 vi.mock("@/lib/infra/sendgrid", () => ({ sendgridEmailNotifier: {} }));
 
 import { submitSearch } from "./submitSearch";
 
 const VALID_INPUT = {
-  sessionToken: "signed-jwt",
   searcherName: "Zara Ahmed",
+  searcherPhone: "+923001234567",
   bloodType: "O_NEG",
   area: "Gulberg",
 };
@@ -74,23 +70,28 @@ const VALID_INPUT = {
 describe("submitSearch server action", () => {
   beforeEach(() => {
     findMatchesMock.mockReset();
-    verifySessionTokenMock.mockReset();
-    consumeSessionUseMock.mockReset();
     createSearchMock.mockReset();
     notifyMatchesMock.mockReset();
     afterMock.mockReset();
     currentTestIp = `198.51.100.${++ipCounter}`;
+    currentSession = { user: { id: "google-sub-search-1", email: "zara@example.com" } };
 
-    verifySessionTokenMock.mockResolvedValue({
-      subject: "+923009999999",
-      jti: "jti-1",
-    });
-    consumeSessionUseMock.mockResolvedValue({ allowed: true, remaining: 1 });
     findMatchesMock.mockResolvedValue([
       { name: "Amara", phone: "+923001111111", area: "Gulberg" },
     ]);
     createSearchMock.mockResolvedValue({ id: "search_1" });
     notifyMatchesMock.mockResolvedValue(undefined);
+  });
+
+  it("returns UNAUTHENTICATED without a Google session", async () => {
+    currentSession = { user: null } as never;
+
+    const result = await submitSearch(VALID_INPUT);
+
+    expect(result).toMatchObject({
+      error: { code: "UNAUTHENTICATED", message: expect.any(String) },
+    });
+    expect(createSearchMock).not.toHaveBeenCalled();
   });
 
   it("returns VALIDATION_ERROR with fieldErrors for invalid input", async () => {
@@ -99,7 +100,16 @@ describe("submitSearch server action", () => {
     expect(result).toMatchObject({
       error: { code: "VALIDATION_ERROR", fieldErrors: { bloodType: expect.any(String) } },
     });
-    expect(verifySessionTokenMock).not.toHaveBeenCalled();
+    expect(createSearchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when the contact phone is invalid", async () => {
+    const result = await submitSearch({ ...VALID_INPUT, searcherPhone: "not-a-phone" });
+
+    expect(result).toMatchObject({
+      error: { code: "VALIDATION_ERROR", fieldErrors: { searcherPhone: expect.any(String) } },
+    });
+    expect(createSearchMock).not.toHaveBeenCalled();
   });
 
   it("returns RATE_LIMITED once the same IP exceeds the threshold", async () => {
@@ -108,45 +118,26 @@ describe("submitSearch server action", () => {
     for (let i = 0; i < 5; i++) {
       await submitSearch(VALID_INPUT);
     }
-    verifySessionTokenMock.mockClear();
+    createSearchMock.mockClear();
 
     const sixth = await submitSearch(VALID_INPUT);
 
     expect(sixth).toMatchObject({ error: { code: "RATE_LIMITED" } });
-    expect(verifySessionTokenMock).not.toHaveBeenCalled();
-  });
-
-  it("returns SESSION_INVALID when the token fails verification", async () => {
-    verifySessionTokenMock.mockResolvedValue(null);
-
-    const result = await submitSearch(VALID_INPUT);
-
-    expect(result).toMatchObject({ error: { code: "SESSION_INVALID" } });
-    expect(consumeSessionUseMock).not.toHaveBeenCalled();
-  });
-
-  it("returns SESSION_EXHAUSTED when the budget is spent", async () => {
-    consumeSessionUseMock.mockResolvedValue({ allowed: false, remaining: 0 });
-
-    const result = await submitSearch(VALID_INPUT);
-
-    expect(result).toMatchObject({ error: { code: "SESSION_EXHAUSTED" } });
     expect(createSearchMock).not.toHaveBeenCalled();
   });
 
-  it("returns matches, records the search with the token's phone (not client input), and consumes the budget exactly once", async () => {
+  it("returns matches and records the search with the searcher's contact phone", async () => {
     const result = await submitSearch(VALID_INPUT);
 
     expect(result).toEqual({
       matches: [{ name: "Amara", phone: "+923001111111", area: "Gulberg" }],
     });
-    expect(consumeSessionUseMock).toHaveBeenCalledTimes(1);
-    expect(consumeSessionUseMock).toHaveBeenCalledWith("jti-1", expect.anything());
     expect(createSearchMock).toHaveBeenCalledWith({
       searcherName: "Zara Ahmed",
-      searcherPhone: "+923009999999",
+      searcherPhone: "+923001234567",
       bloodType: "O_NEG",
       area: "Gulberg",
+      correlationId: expect.any(String),
     });
   });
 

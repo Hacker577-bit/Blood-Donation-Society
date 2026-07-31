@@ -1,16 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
 import { after } from "next/server";
-import { ipAddress } from "@vercel/functions";
+import { auth } from "@/lib/auth";
+import { getRequestIp } from "@/lib/infra/requestIp";
 import { submitSearchSchema } from "@/lib/validation/submitSearch";
 import { checkRateLimit } from "@/lib/domain/rate-limit";
-import { verifySessionToken, consumeSessionUse } from "@/lib/domain/session";
 import { findMatches, type DonorMatch } from "@/lib/domain/matching";
 import { notifyMatches } from "@/lib/domain/notify";
 import { redisRateLimitStore } from "@/lib/infra/rateLimitStore";
-import { joseTokenSigner } from "@/lib/infra/jwt";
-import { redisSessionBudgetStore } from "@/lib/infra/sessionStore";
 import * as donorRepository from "@/lib/infra/repositories/donorRepository";
 import { createSearch } from "@/lib/infra/repositories/searchRepository";
 import { twilioNotificationSender } from "@/lib/infra/twilio";
@@ -38,7 +35,18 @@ interface ActionSuccess {
 export type SubmitSearchResult = ActionSuccess | ActionError;
 
 export async function submitSearch(input: unknown): Promise<SubmitSearchResult> {
-  const ip = ipAddress(await headers()) ?? "unknown";
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      error: {
+        code: "UNAUTHENTICATED",
+        message: "Please sign in with Google to search for blood.",
+      },
+    };
+  }
+
+  const ip = await getRequestIp();
   const rateLimitResult = await checkRateLimit(
     { ip, endpoint: "submitSearch" },
     redisRateLimitStore,
@@ -76,32 +84,8 @@ export async function submitSearch(input: unknown): Promise<SubmitSearchResult> 
     };
   }
 
-  const sessionToken =
-    typeof inputRecord.sessionToken === "string" ? inputRecord.sessionToken : "";
-  const verifiedToken = await verifySessionToken(sessionToken, joseTokenSigner);
-
-  if (!verifiedToken) {
-    return {
-      error: {
-        code: "SESSION_INVALID",
-        message: "Your session has expired. Please verify your phone again.",
-      },
-    };
-  }
-
-  const budgetResult = await consumeSessionUse(verifiedToken.jti, redisSessionBudgetStore);
-
-  if (!budgetResult.allowed) {
-    return {
-      error: {
-        code: "SESSION_EXHAUSTED",
-        message: "This search session has been used up. Please verify your phone again.",
-      },
-    };
-  }
-
-  const { searcherName, bloodType, area } = parsed.data;
-  const searcherPhone = verifiedToken.subject;
+  const { searcherName, searcherPhone, bloodType, area } = parsed.data;
+  const correlationId = crypto.randomUUID();
 
   const matches = await findMatches({ bloodType, area }, donorRepository);
 
@@ -110,6 +94,7 @@ export async function submitSearch(input: unknown): Promise<SubmitSearchResult> 
     searcherPhone,
     bloodType: bloodType as BloodType,
     area: area as Area,
+    correlationId,
   });
 
   after(async () => {

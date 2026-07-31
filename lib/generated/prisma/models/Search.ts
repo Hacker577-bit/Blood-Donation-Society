@@ -20,8 +20,18 @@ export type SearchModel = runtime.Types.Result.DefaultSelection<Prisma.$SearchPa
 
 export type AggregateSearch = {
   _count: SearchCountAggregateOutputType | null
+  _avg: SearchAvgAggregateOutputType | null
+  _sum: SearchSumAggregateOutputType | null
   _min: SearchMinAggregateOutputType | null
   _max: SearchMaxAggregateOutputType | null
+}
+
+export type SearchAvgAggregateOutputType = {
+  matchCount: number | null
+}
+
+export type SearchSumAggregateOutputType = {
+  matchCount: number | null
 }
 
 export type SearchMinAggregateOutputType = {
@@ -30,6 +40,8 @@ export type SearchMinAggregateOutputType = {
   searcherPhone: string | null
   bloodType: $Enums.BloodType | null
   area: $Enums.Area | null
+  matchCount: number | null
+  correlationId: string | null
   createdAt: Date | null
 }
 
@@ -39,6 +51,8 @@ export type SearchMaxAggregateOutputType = {
   searcherPhone: string | null
   bloodType: $Enums.BloodType | null
   area: $Enums.Area | null
+  matchCount: number | null
+  correlationId: string | null
   createdAt: Date | null
 }
 
@@ -48,10 +62,20 @@ export type SearchCountAggregateOutputType = {
   searcherPhone: number
   bloodType: number
   area: number
+  matchCount: number
+  correlationId: number
   createdAt: number
   _all: number
 }
 
+
+export type SearchAvgAggregateInputType = {
+  matchCount?: true
+}
+
+export type SearchSumAggregateInputType = {
+  matchCount?: true
+}
 
 export type SearchMinAggregateInputType = {
   id?: true
@@ -59,6 +83,8 @@ export type SearchMinAggregateInputType = {
   searcherPhone?: true
   bloodType?: true
   area?: true
+  matchCount?: true
+  correlationId?: true
   createdAt?: true
 }
 
@@ -68,6 +94,8 @@ export type SearchMaxAggregateInputType = {
   searcherPhone?: true
   bloodType?: true
   area?: true
+  matchCount?: true
+  correlationId?: true
   createdAt?: true
 }
 
@@ -77,6 +105,8 @@ export type SearchCountAggregateInputType = {
   searcherPhone?: true
   bloodType?: true
   area?: true
+  matchCount?: true
+  correlationId?: true
   createdAt?: true
   _all?: true
 }
@@ -119,6 +149,18 @@ export type SearchAggregateArgs<ExtArgs extends runtime.Types.Extensions.Interna
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: SearchAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: SearchSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: SearchMinAggregateInputType
@@ -149,6 +191,8 @@ export type SearchGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   _count?: SearchCountAggregateInputType | true
+  _avg?: SearchAvgAggregateInputType
+  _sum?: SearchSumAggregateInputType
   _min?: SearchMinAggregateInputType
   _max?: SearchMaxAggregateInputType
 }
@@ -159,8 +203,12 @@ export type SearchGroupByOutputType = {
   searcherPhone: string
   bloodType: $Enums.BloodType
   area: $Enums.Area
+  matchCount: number
+  correlationId: string | null
   createdAt: Date
   _count: SearchCountAggregateOutputType | null
+  _avg: SearchAvgAggregateOutputType | null
+  _sum: SearchSumAggregateOutputType | null
   _min: SearchMinAggregateOutputType | null
   _max: SearchMaxAggregateOutputType | null
 }
@@ -189,6 +237,8 @@ export type SearchWhereInput = {
   searcherPhone?: Prisma.StringFilter<"Search"> | string
   bloodType?: Prisma.EnumBloodTypeFilter<"Search"> | $Enums.BloodType
   area?: Prisma.EnumAreaFilter<"Search"> | $Enums.Area
+  matchCount?: Prisma.IntFilter<"Search"> | number
+  correlationId?: Prisma.StringNullableFilter<"Search"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Search"> | Date | string
 }
 
@@ -198,6 +248,8 @@ export type SearchOrderByWithRelationInput = {
   searcherPhone?: Prisma.SortOrder
   bloodType?: Prisma.SortOrder
   area?: Prisma.SortOrder
+  matchCount?: Prisma.SortOrder
+  correlationId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -210,6 +262,8 @@ export type SearchWhereUniqueInput = Prisma.AtLeast<{
   searcherPhone?: Prisma.StringFilter<"Search"> | string
   bloodType?: Prisma.EnumBloodTypeFilter<"Search"> | $Enums.BloodType
   area?: Prisma.EnumAreaFilter<"Search"> | $Enums.Area
+  matchCount?: Prisma.IntFilter<"Search"> | number
+  correlationId?: Prisma.StringNullableFilter<"Search"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Search"> | Date | string
 }, "id">
 
@@ -219,10 +273,14 @@ export type SearchOrderByWithAggregationInput = {
   searcherPhone?: Prisma.SortOrder
   bloodType?: Prisma.SortOrder
   area?: Prisma.SortOrder
+  matchCount?: Prisma.SortOrder
+  correlationId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.SearchCountOrderByAggregateInput
+  _avg?: Prisma.SearchAvgOrderByAggregateInput
   _max?: Prisma.SearchMaxOrderByAggregateInput
   _min?: Prisma.SearchMinOrderByAggregateInput
+  _sum?: Prisma.SearchSumOrderByAggregateInput
 }
 
 export type SearchScalarWhereWithAggregatesInput = {
@@ -234,6 +292,8 @@ export type SearchScalarWhereWithAggregatesInput = {
   searcherPhone?: Prisma.StringWithAggregatesFilter<"Search"> | string
   bloodType?: Prisma.EnumBloodTypeWithAggregatesFilter<"Search"> | $Enums.BloodType
   area?: Prisma.EnumAreaWithAggregatesFilter<"Search"> | $Enums.Area
+  matchCount?: Prisma.IntWithAggregatesFilter<"Search"> | number
+  correlationId?: Prisma.StringNullableWithAggregatesFilter<"Search"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Search"> | Date | string
 }
 
@@ -243,6 +303,8 @@ export type SearchCreateInput = {
   searcherPhone: string
   bloodType: $Enums.BloodType
   area: $Enums.Area
+  matchCount?: number
+  correlationId?: string | null
   createdAt?: Date | string
 }
 
@@ -252,6 +314,8 @@ export type SearchUncheckedCreateInput = {
   searcherPhone: string
   bloodType: $Enums.BloodType
   area: $Enums.Area
+  matchCount?: number
+  correlationId?: string | null
   createdAt?: Date | string
 }
 
@@ -261,6 +325,8 @@ export type SearchUpdateInput = {
   searcherPhone?: Prisma.StringFieldUpdateOperationsInput | string
   bloodType?: Prisma.EnumBloodTypeFieldUpdateOperationsInput | $Enums.BloodType
   area?: Prisma.EnumAreaFieldUpdateOperationsInput | $Enums.Area
+  matchCount?: Prisma.IntFieldUpdateOperationsInput | number
+  correlationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -270,6 +336,8 @@ export type SearchUncheckedUpdateInput = {
   searcherPhone?: Prisma.StringFieldUpdateOperationsInput | string
   bloodType?: Prisma.EnumBloodTypeFieldUpdateOperationsInput | $Enums.BloodType
   area?: Prisma.EnumAreaFieldUpdateOperationsInput | $Enums.Area
+  matchCount?: Prisma.IntFieldUpdateOperationsInput | number
+  correlationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -279,6 +347,8 @@ export type SearchCreateManyInput = {
   searcherPhone: string
   bloodType: $Enums.BloodType
   area: $Enums.Area
+  matchCount?: number
+  correlationId?: string | null
   createdAt?: Date | string
 }
 
@@ -288,6 +358,8 @@ export type SearchUpdateManyMutationInput = {
   searcherPhone?: Prisma.StringFieldUpdateOperationsInput | string
   bloodType?: Prisma.EnumBloodTypeFieldUpdateOperationsInput | $Enums.BloodType
   area?: Prisma.EnumAreaFieldUpdateOperationsInput | $Enums.Area
+  matchCount?: Prisma.IntFieldUpdateOperationsInput | number
+  correlationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -297,6 +369,8 @@ export type SearchUncheckedUpdateManyInput = {
   searcherPhone?: Prisma.StringFieldUpdateOperationsInput | string
   bloodType?: Prisma.EnumBloodTypeFieldUpdateOperationsInput | $Enums.BloodType
   area?: Prisma.EnumAreaFieldUpdateOperationsInput | $Enums.Area
+  matchCount?: Prisma.IntFieldUpdateOperationsInput | number
+  correlationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -306,7 +380,13 @@ export type SearchCountOrderByAggregateInput = {
   searcherPhone?: Prisma.SortOrder
   bloodType?: Prisma.SortOrder
   area?: Prisma.SortOrder
+  matchCount?: Prisma.SortOrder
+  correlationId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+}
+
+export type SearchAvgOrderByAggregateInput = {
+  matchCount?: Prisma.SortOrder
 }
 
 export type SearchMaxOrderByAggregateInput = {
@@ -315,6 +395,8 @@ export type SearchMaxOrderByAggregateInput = {
   searcherPhone?: Prisma.SortOrder
   bloodType?: Prisma.SortOrder
   area?: Prisma.SortOrder
+  matchCount?: Prisma.SortOrder
+  correlationId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -324,7 +406,21 @@ export type SearchMinOrderByAggregateInput = {
   searcherPhone?: Prisma.SortOrder
   bloodType?: Prisma.SortOrder
   area?: Prisma.SortOrder
+  matchCount?: Prisma.SortOrder
+  correlationId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+}
+
+export type SearchSumOrderByAggregateInput = {
+  matchCount?: Prisma.SortOrder
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -339,6 +435,8 @@ export type SearchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   searcherPhone?: boolean
   bloodType?: boolean
   area?: boolean
+  matchCount?: boolean
+  correlationId?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["search"]>
 
@@ -348,6 +446,8 @@ export type SearchSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   searcherPhone?: boolean
   bloodType?: boolean
   area?: boolean
+  matchCount?: boolean
+  correlationId?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["search"]>
 
@@ -357,6 +457,8 @@ export type SearchSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   searcherPhone?: boolean
   bloodType?: boolean
   area?: boolean
+  matchCount?: boolean
+  correlationId?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["search"]>
 
@@ -366,10 +468,12 @@ export type SearchSelectScalar = {
   searcherPhone?: boolean
   bloodType?: boolean
   area?: boolean
+  matchCount?: boolean
+  correlationId?: boolean
   createdAt?: boolean
 }
 
-export type SearchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "searcherName" | "searcherPhone" | "bloodType" | "area" | "createdAt", ExtArgs["result"]["search"]>
+export type SearchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "searcherName" | "searcherPhone" | "bloodType" | "area" | "matchCount" | "correlationId" | "createdAt", ExtArgs["result"]["search"]>
 
 export type $SearchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Search"
@@ -380,6 +484,8 @@ export type $SearchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     searcherPhone: string
     bloodType: $Enums.BloodType
     area: $Enums.Area
+    matchCount: number
+    correlationId: string | null
     createdAt: Date
   }, ExtArgs["result"]["search"]>
   composites: {}
@@ -809,6 +915,8 @@ export interface SearchFieldRefs {
   readonly searcherPhone: Prisma.FieldRef<"Search", 'String'>
   readonly bloodType: Prisma.FieldRef<"Search", 'BloodType'>
   readonly area: Prisma.FieldRef<"Search", 'Area'>
+  readonly matchCount: Prisma.FieldRef<"Search", 'Int'>
+  readonly correlationId: Prisma.FieldRef<"Search", 'String'>
   readonly createdAt: Prisma.FieldRef<"Search", 'DateTime'>
 }
     

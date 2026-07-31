@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+.env*
+.vscode
+.vercel
+coverage
+_bmad
+_bmad-output
+.claude

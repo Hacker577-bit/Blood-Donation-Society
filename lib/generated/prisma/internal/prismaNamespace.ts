@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Donor: 'Donor',
   DonorArea: 'DonorArea',
-  Search: 'Search'
+  Search: 'Search',
+  RateLimitRecord: 'RateLimitRecord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "donor" | "donorArea" | "search"
+    modelProps: "donor" | "donorArea" | "search" | "rateLimitRecord"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RateLimitRecord: {
+      payload: Prisma.$RateLimitRecordPayload<ExtArgs>
+      fields: Prisma.RateLimitRecordFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RateLimitRecordFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RateLimitRecordFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        findFirst: {
+          args: Prisma.RateLimitRecordFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RateLimitRecordFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        findMany: {
+          args: Prisma.RateLimitRecordFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>[]
+        }
+        create: {
+          args: Prisma.RateLimitRecordCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        createMany: {
+          args: Prisma.RateLimitRecordCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RateLimitRecordCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>[]
+        }
+        delete: {
+          args: Prisma.RateLimitRecordDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        update: {
+          args: Prisma.RateLimitRecordUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        deleteMany: {
+          args: Prisma.RateLimitRecordDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RateLimitRecordUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RateLimitRecordUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>[]
+        }
+        upsert: {
+          args: Prisma.RateLimitRecordUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RateLimitRecordPayload>
+        }
+        aggregate: {
+          args: Prisma.RateLimitRecordAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRateLimitRecord>
+        }
+        groupBy: {
+          args: Prisma.RateLimitRecordGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RateLimitRecordGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RateLimitRecordCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RateLimitRecordCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -669,6 +744,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const DonorScalarFieldEnum = {
   id: 'id',
+  googleId: 'googleId',
   name: 'name',
   phone: 'phone',
   email: 'email',
@@ -694,10 +770,21 @@ export const SearchScalarFieldEnum = {
   searcherPhone: 'searcherPhone',
   bloodType: 'bloodType',
   area: 'area',
+  matchCount: 'matchCount',
+  correlationId: 'correlationId',
   createdAt: 'createdAt'
 } as const
 
 export type SearchScalarFieldEnum = (typeof SearchScalarFieldEnum)[keyof typeof SearchScalarFieldEnum]
+
+
+export const RateLimitRecordScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  createdAt: 'createdAt'
+} as const
+
+export type RateLimitRecordScalarFieldEnum = (typeof RateLimitRecordScalarFieldEnum)[keyof typeof RateLimitRecordScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -804,6 +891,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -919,6 +1020,7 @@ export type GlobalOmitConfig = {
   donor?: Prisma.DonorOmit
   donorArea?: Prisma.DonorAreaOmit
   search?: Prisma.SearchOmit
+  rateLimitRecord?: Prisma.RateLimitRecordOmit
 }
 
 /* Types for Logging */

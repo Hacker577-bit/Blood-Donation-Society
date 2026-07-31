@@ -1,11 +1,9 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { AREA_LABELS, BLOOD_TYPE_LABELS } from "@/lib/presentation/labels";
-import { findDonorWithAreas } from "@/lib/infra/repositories/donorRepository";
+import { findDonorWithAreasByGoogleId } from "@/lib/infra/repositories/donorRepository";
 import { computeEligibility } from "@/lib/domain/eligibility";
-import { verifySessionToken } from "@/lib/domain/session";
-import { joseTokenSigner } from "@/lib/infra/jwt";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -13,30 +11,18 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 });
 
 export default async function SelfServiceDashboardPage() {
-  const token = (await cookies()).get("self_service_session")?.value;
+  const session = await auth();
 
-  if (!token) {
+  if (!session?.user?.id) {
     redirect("/manage");
   }
 
-  // joseTokenSigner.verify never throws — expired, tampered, and wrong-key
-  // tokens all arrive here as null.
-  const session = await verifySessionToken(token, joseTokenSigner);
-
-  if (!session) {
-    redirect("/manage");
-  }
-
-  // FR-9: identity comes solely from the signed token's subject. Never from a
-  // query param, a client-settable cookie value, or a form field.
-  const donor = await findDonorWithAreas(session.subject);
+  const donor = await findDonorWithAreasByGoogleId(session.user.id);
 
   if (!donor || !donor.isVerified) {
     redirect("/manage");
   }
 
-  // Rendering must not spend the budget-of-1, or the donor would arrive with
-  // zero actions left and Stories 3.2/3.3 would be unreachable.
   const { isEligible, eligibleAgainOn } = computeEligibility({
     lastDonationDate: donor.lastDonationDate,
   });

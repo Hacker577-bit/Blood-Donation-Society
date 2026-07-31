@@ -17,7 +17,7 @@ export default function Home() {
       </div>
 
       <nav className="flex flex-col gap-4">
-        <Link href="/search/verify" className={primaryFork}>
+        <Link href="/search" className={primaryFork}>
           I need blood
         </Link>
         <Link href="/register" className={secondaryFork}>

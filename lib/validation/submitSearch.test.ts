@@ -3,6 +3,7 @@ import { submitSearchSchema } from "./submitSearch";
 
 const validInput = {
   searcherName: "Zara Ahmed",
+  searcherPhone: "+923001234567",
   bloodType: "O_NEG",
   area: "Gulberg",
 };
@@ -21,6 +22,17 @@ describe("submitSearchSchema", () => {
 
   it("rejects a blank searcherName", () => {
     const result = submitSearchSchema.safeParse({ ...validInput, searcherName: "   " });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a missing searcherPhone", () => {
+    const { searcherPhone, ...rest } = validInput;
+    const result = submitSearchSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an invalid searcherPhone", () => {
+    const result = submitSearchSchema.safeParse({ ...validInput, searcherPhone: "03001234567" });
     expect(result.success).toBe(false);
   });
 
@@ -46,14 +58,11 @@ describe("submitSearchSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("does not accept a searcherPhone field as part of the schema", () => {
-    const parsed = submitSearchSchema.safeParse({
-      ...validInput,
-      searcherPhone: "+923001234567",
-    });
+  it("requires a searcherPhone in the parsed shape", () => {
+    const parsed = submitSearchSchema.safeParse(validInput);
     expect(parsed.success).toBe(true);
     if (parsed.success) {
-      expect(parsed.data).not.toHaveProperty("searcherPhone");
+      expect(parsed.data).toHaveProperty("searcherPhone", "+923001234567");
     }
   });
 });

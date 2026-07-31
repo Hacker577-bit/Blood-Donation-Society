@@ -4,18 +4,18 @@ const globalForRedis = globalThis as unknown as {
   redis?: Redis;
 };
 
-function createRedisClient(): Redis {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    throw new Error(
-      "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set before using the Redis client.",
-    );
+function getRedis(): Redis {
+  if (!globalForRedis.redis) {
+    globalForRedis.redis = Redis.fromEnv();
+    if (process.env.NODE_ENV !== "production") {
+      globalForRedis.redis = globalForRedis.redis;
+    }
   }
-
-  return Redis.fromEnv();
+  return globalForRedis.redis;
 }
 
-export const redis = globalForRedis.redis ?? createRedisClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForRedis.redis = redis;
-}
+export const redis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    return getRedis()[prop as keyof Redis];
+  },
+});

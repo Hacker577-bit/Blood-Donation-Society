@@ -8,7 +8,7 @@ describe("Home", () => {
 
     expect(screen.getByRole("link", { name: "I need blood" })).toHaveAttribute(
       "href",
-      "/search/verify",
+      "/search",
     );
     expect(screen.getByRole("link", { name: "I want to help" })).toHaveAttribute(
       "href",

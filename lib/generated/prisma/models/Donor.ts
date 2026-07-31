@@ -26,6 +26,7 @@ export type AggregateDonor = {
 
 export type DonorMinAggregateOutputType = {
   id: string | null
+  googleId: string | null
   name: string | null
   phone: string | null
   email: string | null
@@ -36,6 +37,7 @@ export type DonorMinAggregateOutputType = {
 
 export type DonorMaxAggregateOutputType = {
   id: string | null
+  googleId: string | null
   name: string | null
   phone: string | null
   email: string | null
@@ -46,6 +48,7 @@ export type DonorMaxAggregateOutputType = {
 
 export type DonorCountAggregateOutputType = {
   id: number
+  googleId: number
   name: number
   phone: number
   email: number
@@ -58,6 +61,7 @@ export type DonorCountAggregateOutputType = {
 
 export type DonorMinAggregateInputType = {
   id?: true
+  googleId?: true
   name?: true
   phone?: true
   email?: true
@@ -68,6 +72,7 @@ export type DonorMinAggregateInputType = {
 
 export type DonorMaxAggregateInputType = {
   id?: true
+  googleId?: true
   name?: true
   phone?: true
   email?: true
@@ -78,6 +83,7 @@ export type DonorMaxAggregateInputType = {
 
 export type DonorCountAggregateInputType = {
   id?: true
+  googleId?: true
   name?: true
   phone?: true
   email?: true
@@ -161,6 +167,7 @@ export type DonorGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type DonorGroupByOutputType = {
   id: string
+  googleId: string | null
   name: string
   phone: string
   email: string | null
@@ -192,6 +199,7 @@ export type DonorWhereInput = {
   OR?: Prisma.DonorWhereInput[]
   NOT?: Prisma.DonorWhereInput | Prisma.DonorWhereInput[]
   id?: Prisma.StringFilter<"Donor"> | string
+  googleId?: Prisma.StringNullableFilter<"Donor"> | string | null
   name?: Prisma.StringFilter<"Donor"> | string
   phone?: Prisma.StringFilter<"Donor"> | string
   email?: Prisma.StringNullableFilter<"Donor"> | string | null
@@ -203,6 +211,7 @@ export type DonorWhereInput = {
 
 export type DonorOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  googleId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -214,6 +223,7 @@ export type DonorOrderByWithRelationInput = {
 
 export type DonorWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  googleId?: string
   phone?: string
   AND?: Prisma.DonorWhereInput | Prisma.DonorWhereInput[]
   OR?: Prisma.DonorWhereInput[]
@@ -224,10 +234,11 @@ export type DonorWhereUniqueInput = Prisma.AtLeast<{
   lastDonationDate?: Prisma.DateTimeNullableFilter<"Donor"> | Date | string | null
   isVerified?: Prisma.BoolFilter<"Donor"> | boolean
   areas?: Prisma.DonorAreaListRelationFilter
-}, "id" | "phone">
+}, "id" | "googleId" | "phone">
 
 export type DonorOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  googleId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -244,6 +255,7 @@ export type DonorScalarWhereWithAggregatesInput = {
   OR?: Prisma.DonorScalarWhereWithAggregatesInput[]
   NOT?: Prisma.DonorScalarWhereWithAggregatesInput | Prisma.DonorScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Donor"> | string
+  googleId?: Prisma.StringNullableWithAggregatesFilter<"Donor"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"Donor"> | string
   phone?: Prisma.StringWithAggregatesFilter<"Donor"> | string
   email?: Prisma.StringNullableWithAggregatesFilter<"Donor"> | string | null
@@ -254,6 +266,7 @@ export type DonorScalarWhereWithAggregatesInput = {
 
 export type DonorCreateInput = {
   id?: string
+  googleId?: string | null
   name: string
   phone: string
   email?: string | null
@@ -265,6 +278,7 @@ export type DonorCreateInput = {
 
 export type DonorUncheckedCreateInput = {
   id?: string
+  googleId?: string | null
   name: string
   phone: string
   email?: string | null
@@ -276,6 +290,7 @@ export type DonorUncheckedCreateInput = {
 
 export type DonorUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -287,6 +302,7 @@ export type DonorUpdateInput = {
 
 export type DonorUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -298,6 +314,7 @@ export type DonorUncheckedUpdateInput = {
 
 export type DonorCreateManyInput = {
   id?: string
+  googleId?: string | null
   name: string
   phone: string
   email?: string | null
@@ -308,6 +325,7 @@ export type DonorCreateManyInput = {
 
 export type DonorUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -318,6 +336,7 @@ export type DonorUpdateManyMutationInput = {
 
 export type DonorUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -328,6 +347,7 @@ export type DonorUncheckedUpdateManyInput = {
 
 export type DonorCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  googleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -338,6 +358,7 @@ export type DonorCountOrderByAggregateInput = {
 
 export type DonorMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  googleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -348,6 +369,7 @@ export type DonorMaxOrderByAggregateInput = {
 
 export type DonorMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  googleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -397,6 +419,7 @@ export type DonorUpdateOneRequiredWithoutAreasNestedInput = {
 
 export type DonorCreateWithoutAreasInput = {
   id?: string
+  googleId?: string | null
   name: string
   phone: string
   email?: string | null
@@ -407,6 +430,7 @@ export type DonorCreateWithoutAreasInput = {
 
 export type DonorUncheckedCreateWithoutAreasInput = {
   id?: string
+  googleId?: string | null
   name: string
   phone: string
   email?: string | null
@@ -433,6 +457,7 @@ export type DonorUpdateToOneWithWhereWithoutAreasInput = {
 
 export type DonorUpdateWithoutAreasInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -443,6 +468,7 @@ export type DonorUpdateWithoutAreasInput = {
 
 export type DonorUncheckedUpdateWithoutAreasInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -484,6 +510,7 @@ export type DonorCountOutputTypeCountAreasArgs<ExtArgs extends runtime.Types.Ext
 
 export type DonorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  googleId?: boolean
   name?: boolean
   phone?: boolean
   email?: boolean
@@ -496,6 +523,7 @@ export type DonorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 
 export type DonorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  googleId?: boolean
   name?: boolean
   phone?: boolean
   email?: boolean
@@ -506,6 +534,7 @@ export type DonorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 
 export type DonorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  googleId?: boolean
   name?: boolean
   phone?: boolean
   email?: boolean
@@ -516,6 +545,7 @@ export type DonorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 
 export type DonorSelectScalar = {
   id?: boolean
+  googleId?: boolean
   name?: boolean
   phone?: boolean
   email?: boolean
@@ -524,7 +554,7 @@ export type DonorSelectScalar = {
   isVerified?: boolean
 }
 
-export type DonorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "phone" | "email" | "bloodType" | "lastDonationDate" | "isVerified", ExtArgs["result"]["donor"]>
+export type DonorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "googleId" | "name" | "phone" | "email" | "bloodType" | "lastDonationDate" | "isVerified", ExtArgs["result"]["donor"]>
 export type DonorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   areas?: boolean | Prisma.Donor$areasArgs<ExtArgs>
   _count?: boolean | Prisma.DonorCountOutputTypeDefaultArgs<ExtArgs>
@@ -539,6 +569,7 @@ export type $DonorPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    googleId: string | null
     name: string
     phone: string
     email: string | null
@@ -970,6 +1001,7 @@ export interface Prisma__DonorClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface DonorFieldRefs {
   readonly id: Prisma.FieldRef<"Donor", 'String'>
+  readonly googleId: Prisma.FieldRef<"Donor", 'String'>
   readonly name: Prisma.FieldRef<"Donor", 'String'>
   readonly phone: Prisma.FieldRef<"Donor", 'String'>
   readonly email: Prisma.FieldRef<"Donor", 'String'>

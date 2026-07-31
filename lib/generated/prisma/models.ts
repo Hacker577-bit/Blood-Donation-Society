@@ -11,4 +11,5 @@
 export type * from './models/Donor'
 export type * from './models/DonorArea'
 export type * from './models/Search'
+export type * from './models/RateLimitRecord'
 export type * from './commonInputTypes'

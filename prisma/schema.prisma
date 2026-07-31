@@ -33,6 +33,7 @@ enum BloodType {
 
 model Donor {
   id               String      @id @default(cuid())
+  googleId         String?     @unique
   name             String
   phone            String      @unique
   email            String?
@@ -56,5 +57,17 @@ model Search {
   searcherPhone String
   bloodType     BloodType
   area          Area
+  matchCount    Int       @default(0)
+  correlationId String?
   createdAt     DateTime  @default(now())
+
+  @@index([createdAt])
+}
+
+model RateLimitRecord {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
 }

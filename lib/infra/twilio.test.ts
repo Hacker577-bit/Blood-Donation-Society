@@ -12,6 +12,8 @@ vi.mock("twilio", () => ({
 let twilioNotificationSender: SmsNotifier;
 
 beforeAll(async () => {
+  process.env.SKIP_SMS_NOTIFICATIONS = "false";
+  process.env.NODE_ENV = "production";
   process.env.TWILIO_ACCOUNT_SID = "unit-test-sid";
   process.env.TWILIO_AUTH_TOKEN = "unit-test-token";
   process.env.TWILIO_FROM_NUMBER = "+15005550006";

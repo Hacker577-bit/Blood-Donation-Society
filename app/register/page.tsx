@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/app/components/ui/Button";
 import { InputField } from "@/app/components/ui/InputField";
 import { AreaChip } from "@/app/components/ui/AreaChip";
+import { GoogleSignInButton } from "@/app/components/ui/GoogleSignInButton";
 import {
   registerDonorSchema,
   AREA_VALUES,
@@ -26,15 +28,17 @@ interface FormState {
   neverDonated: boolean;
 }
 
-const initialState: FormState = {
-  name: "",
-  phone: "",
-  bloodType: "",
-  areas: [],
-  email: "",
-  lastDonationDate: "",
-  neverDonated: false,
-};
+function initialState(name: string, email: string): FormState {
+  return {
+    name,
+    phone: "",
+    bloodType: "",
+    areas: [],
+    email,
+    lastDonationDate: "",
+    neverDonated: false,
+  };
+}
 
 function toValidationInput(form: FormState): unknown {
   return {
@@ -49,11 +53,46 @@ function toValidationInput(form: FormState): unknown {
 
 export default function DonorRegistrationPage() {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(initialState);
+  const { data: session, status } = useSession();
+  const [form, setForm] = useState<FormState>(() =>
+    initialState(session?.user?.name ?? "", session?.user?.email ?? ""),
+  );
   const [touchedFields, setTouchedFields] = useState<Set<FieldName>>(new Set());
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      setForm((prev) => ({
+        ...prev,
+        name: session.user?.name ?? prev.name,
+        email: session.user?.email ?? prev.email,
+      }));
+    }
+  }, [session]);
+
+  if (status === "loading") {
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
+        <p className="text-body text-ink-secondary">Loading…</p>
+      </main>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-heading text-ink-primary">Donor Registration</h1>
+          <p className="text-body text-ink-secondary">
+            Sign in with Google to register as a blood donor.
+          </p>
+        </div>
+        <GoogleSignInButton />
+      </main>
+    );
+  }
 
   const validationResult = useMemo(
     () => registerDonorSchema.safeParse(toValidationInput(form)),
@@ -113,7 +152,7 @@ export default function DonorRegistrationPage() {
         return;
       }
 
-      router.push(`/register/verify?donorId=${result.donorId}`);
+      router.push(`/register/confirmation?donorId=${result.donorId}`);
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {

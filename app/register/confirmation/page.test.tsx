@@ -80,21 +80,4 @@ describe("Registration Confirmation screen", () => {
 
     expect(redirectMock).toHaveBeenCalledWith("/register");
   });
-
-  it("redirects to Donor OTP Verify when the donor is not yet verified", async () => {
-    findDonorWithAreasMock.mockResolvedValue({
-      id: "donor_3",
-      name: "Unverified Donor",
-      bloodType: "A_POS",
-      lastDonationDate: null,
-      isVerified: false,
-      areas: ["Cantt"],
-    });
-
-    await expect(
-      RegistrationConfirmationPage({ searchParams: Promise.resolve({ donorId: "donor_3" }) }),
-    ).rejects.toThrow("REDIRECT:/register/verify?donorId=donor_3");
-
-    expect(redirectMock).toHaveBeenCalledWith("/register/verify?donorId=donor_3");
-  });
 });

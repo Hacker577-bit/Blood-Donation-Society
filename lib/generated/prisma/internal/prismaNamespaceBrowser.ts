@@ -53,7 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Donor: 'Donor',
   DonorArea: 'DonorArea',
-  Search: 'Search'
+  Search: 'Search',
+  RateLimitRecord: 'RateLimitRecord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -74,6 +75,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const DonorScalarFieldEnum = {
   id: 'id',
+  googleId: 'googleId',
   name: 'name',
   phone: 'phone',
   email: 'email',
@@ -99,10 +101,21 @@ export const SearchScalarFieldEnum = {
   searcherPhone: 'searcherPhone',
   bloodType: 'bloodType',
   area: 'area',
+  matchCount: 'matchCount',
+  correlationId: 'correlationId',
   createdAt: 'createdAt'
 } as const
 
 export type SearchScalarFieldEnum = (typeof SearchScalarFieldEnum)[keyof typeof SearchScalarFieldEnum]
+
+
+export const RateLimitRecordScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  createdAt: 'createdAt'
+} as const
+
+export type RateLimitRecordScalarFieldEnum = (typeof RateLimitRecordScalarFieldEnum)[keyof typeof RateLimitRecordScalarFieldEnum]
 
 
 export const SortOrder = {

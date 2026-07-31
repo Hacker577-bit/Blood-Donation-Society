@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/app/components/ui/Button";
 import { AreaChip } from "@/app/components/ui/AreaChip";
+import { GoogleSignInButton } from "@/app/components/ui/GoogleSignInButton";
 import { AREA_VALUES, BLOOD_TYPE_VALUES } from "@/lib/validation/registerDonor";
 import { AREA_LABELS, BLOOD_TYPE_LABELS } from "@/lib/presentation/labels";
 import { getNearbyAreas } from "@/lib/domain/areaAdjacency";
@@ -69,12 +70,12 @@ function MatchCard({ match }: { match: Match }) {
 }
 
 function SearchForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionToken = searchParams.get("sessionToken");
-  const searcherName = searchParams.get("name");
+  const { data: session, status } = useSession();
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   const [step, setStep] = useState<Step>("form");
+  const [searcherName, setSearcherName] = useState("");
+  const [searcherPhone, setSearcherPhone] = useState("");
   const [bloodType, setBloodType] = useState("");
   const [area, setArea] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,15 +84,40 @@ function SearchForm() {
   const [didExpand, setDidExpand] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const correlationIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!sessionToken || !searcherName) {
-      router.replace("/search/verify");
+    if (session?.user?.name) {
+      setSearcherName(session.user.name);
     }
-  }, [sessionToken, searcherName, router]);
+  }, [session]);
 
-  if (!sessionToken || !searcherName) {
-    return null;
+  useEffect(() => {
+    if (headingRef.current) {
+      headingRef.current.focus();
+    }
+  }, [step]);
+
+  if (status === "loading") {
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
+        <p className="text-body text-ink-secondary">Loading…</p>
+      </main>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-heading text-ink-primary">Search</h1>
+          <p className="text-body text-ink-secondary">
+            Sign in with Google to search for blood donors.
+          </p>
+        </div>
+        <GoogleSignInButton />
+      </main>
+    );
   }
 
   const isValid = bloodType.length > 0 && area !== null;
@@ -109,8 +135,8 @@ function SearchForm() {
     setAreasSearched([]);
     try {
       const result = await submitSearch({
-        sessionToken,
         searcherName,
+        searcherPhone,
         bloodType,
         area,
       });
@@ -121,6 +147,7 @@ function SearchForm() {
         return;
       }
 
+      correlationIdRef.current = crypto.randomUUID();
       setMatches(result.matches);
       setStep(result.matches.length === 0 ? "expand" : "results");
     } catch {
@@ -137,10 +164,11 @@ function SearchForm() {
     setErrorMessage(null);
     try {
       const result = await expandSearch({
-        sessionToken,
         searcherName,
+        searcherPhone,
         bloodType,
         originArea: area,
+        correlationId: correlationIdRef.current,
       });
 
       if ("error" in result) {
@@ -161,24 +189,20 @@ function SearchForm() {
     }
   }
 
-  // A spent or invalid session cannot be retried from this screen — re-verification is the only
-  // way forward, so the action is disabled rather than left inviting rate-limited dead clicks.
-  const isSessionTerminal =
-    errorCode === "SESSION_INVALID" || errorCode === "SESSION_EXHAUSTED";
-
   const errorBlock = errorCode && (
     <p role="alert" className="text-meta text-status-error">
       {errorMessage}
-      {isSessionTerminal && (
-        <>
-          {" "}
-          <a href="/search/verify" className="text-accent underline-offset-2 hover:underline">
-            Verify your phone again
-          </a>
-        </>
-      )}
     </p>
   );
+
+  const announcementMessage =
+    step === "results"
+      ? `Found ${matches.length} match${matches.length === 1 ? "" : "es"}.`
+      : step === "empty"
+        ? "No match found in the selected area or nearby areas."
+        : step === "expand"
+          ? "No match found in the selected area. Nearby areas are available to search."
+          : "";
 
   const skeletonBlock = isSubmitting && (
     <div className="flex flex-col gap-4">
@@ -195,7 +219,10 @@ function SearchForm() {
 
     return (
       <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
-        <h1 className="text-heading text-ink-primary">
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcementMessage}
+        </div>
+        <h1 ref={headingRef} tabIndex={-1} className="text-heading text-ink-primary">
           We couldn&apos;t find a match in {AREA_LABELS[area as keyof typeof AREA_LABELS]} yet.
         </h1>
         <p className="text-body text-ink-secondary">
@@ -208,7 +235,6 @@ function SearchForm() {
         <Button
           type="button"
           onClick={handleExpand}
-          disabled={isSessionTerminal}
           loading={isSubmitting}
           loadingText="Searching…"
         >
@@ -227,7 +253,10 @@ function SearchForm() {
 
     return (
       <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
-        <h1 className="text-heading text-ink-primary">Matches</h1>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcementMessage}
+        </div>
+        <h1 ref={headingRef} tabIndex={-1} className="text-heading text-ink-primary">Matches</h1>
         {didExpand && (
           <p data-testid="matched-areas-summary" className="text-meta text-ink-secondary">
             Found in {matchedAreaLabels.join(", ")}.
@@ -254,16 +283,19 @@ function SearchForm() {
 
     return (
       <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8 motion-reduce:transition-none">
-        <h1 className="text-heading text-ink-primary">No match found yet.</h1>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcementMessage}
+        </div>
+        <h1 ref={headingRef} tabIndex={-1} className="text-heading text-ink-primary">No match found yet.</h1>
         <p data-testid="empty-state-body" className="text-body text-ink-secondary">
           We checked {checkedPhrase}, and no eligible donor is listed for{" "}
           {BLOOD_TYPE_LABELS[bloodType as keyof typeof BLOOD_TYPE_LABELS]} right now.
         </p>
         <p className="text-body text-ink-secondary">
-          To try a different area, verify your phone again.
+          To try a different area, change the search criteria and search again.
         </p>
         <a
-          href="/search/verify"
+          href="/search"
           className="inline-flex w-fit min-h-[44px] items-center text-body text-accent underline underline-offset-2"
         >
           Start a new search
@@ -277,6 +309,33 @@ function SearchForm() {
       <h1 className="text-heading text-ink-primary">Search</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
+        <div className="flex flex-col gap-2">
+          <label className="text-label text-ink-primary" htmlFor="searcherName">
+            Your name
+          </label>
+          <input
+            id="searcherName"
+            type="text"
+            value={searcherName}
+            onChange={(e) => setSearcherName(e.target.value)}
+            className="min-h-[48px] rounded-sm border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-label text-ink-primary" htmlFor="searcherPhone">
+            Contact number
+          </label>
+          <input
+            id="searcherPhone"
+            type="tel"
+            placeholder="+923001234567"
+            value={searcherPhone}
+            onChange={(e) => setSearcherPhone(e.target.value)}
+            className="min-h-[48px] rounded-sm border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary focus:border-accent focus:outline-none"
+          />
+        </div>
+
         <div className="flex flex-col gap-2">
           <label className="text-label text-ink-primary" htmlFor="bloodType">
             Blood type
@@ -316,7 +375,7 @@ function SearchForm() {
         {errorBlock}
 
         <Button
-          disabled={!isValid || isSessionTerminal}
+          disabled={!isValid || searcherPhone.length === 0}
           loading={isSubmitting}
           loadingText="Searching…"
         >
@@ -328,9 +387,5 @@ function SearchForm() {
 }
 
 export default function SearchPage() {
-  return (
-    <Suspense fallback={null}>
-      <SearchForm />
-    </Suspense>
-  );
+  return <SearchForm />;
 }
