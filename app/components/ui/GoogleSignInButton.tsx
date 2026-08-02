@@ -7,7 +7,7 @@ export function GoogleSignInButton() {
     <button
       type="button"
       onClick={() => signIn("google")}
-      className="min-h-[48px] min-w-[48px] flex items-center justify-center gap-3 rounded-xl border border-border-hairline bg-surface-raised px-6 text-button text-ink-primary transition hover:bg-surface-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+      className="min-h-[48px] min-w-[48px] flex w-full items-center justify-center gap-3 rounded-lg border border-border-hairline bg-surface-raised px-6 text-button text-ink-primary shadow-card transition hover:bg-surface-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transition-none"
     >
       <GoogleIcon />
       Continue with Google

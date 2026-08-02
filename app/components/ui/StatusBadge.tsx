@@ -13,8 +13,9 @@ const STATUS_CLASSES: Record<StatusBadgeProps["status"], string> = {
 export function StatusBadge({ status, children }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-body font-semibold ${STATUS_CLASSES[status]}`}
+      className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-1.5 text-body font-semibold ${STATUS_CLASSES[status]}`}
     >
+      <span className="size-2 rounded-full bg-current" aria-hidden="true" />
       {children}
     </span>
   );

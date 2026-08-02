@@ -4,22 +4,30 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
 
-  /* Colors — DESIGN.md token set */
-  --color-surface-base: #f7f7f6;
+  /* Colors — DESIGN.md token set (accent re-themed to a warm blood red) */
+  --color-surface-base: #faf8f7;
   --color-surface-raised: #ffffff;
-  --color-ink-primary: #1b1d1f;
-  --color-ink-secondary: #5d6167;
-  --color-ink-disabled: #a6abb1;
-  --color-border-hairline: #e2e4e7;
-  --color-accent: #0b5d67;
-  --color-accent-hover: #08454c;
+  --color-surface-overlay: #f4efee;
+  --color-ink-primary: #1c1917;
+  --color-ink-secondary: #57534e;
+  --color-ink-disabled: #a8a29e;
+  --color-border-hairline: #e7e5e4;
+  --color-accent: #e11d48;
+  --color-accent-hover: #be123c;
   --color-accent-on: #ffffff;
-  --color-status-success: #1e7a4c;
-  --color-status-success-bg: #e6f4ec;
-  --color-status-caution: #9a6400;
-  --color-status-caution-bg: #fbf0da;
-  --color-status-error: #b3261e;
-  --color-status-error-bg: #fbeae9;
+  --color-accent-soft: #ffe4e6;
+  --color-blood: #be123c;
+  --color-blood-deep: #881337;
+  --color-status-success: #15803d;
+  --color-status-success-bg: #dcfce7;
+  --color-status-caution: #b45309;
+  --color-status-caution-bg: #fef3c7;
+  --color-status-error: #b91c1c;
+  --color-status-error-bg: #fee2e2;
+  --color-focus-ring: #e11d48;
+  --color-hero-from: #7f1d2d;
+  --color-hero-via: #be123c;
+  --color-hero-to: #e11d48;
 
   /* Typography scale — DESIGN.md token set */
   --text-display: 28px;
@@ -64,10 +72,55 @@
   --spacing-gutter: 16px;
   --spacing-margin-mobile: 16px;
   --spacing-margin-desktop: 32px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.05), 0 14px 34px -18px rgb(136 19 55 / 0.28);
+  --shadow-hero: 0 24px 60px -24px rgb(127 29 45 / 0.55);
+  --shadow-glow: 0 10px 34px -12px rgb(225 29 72 / 0.45);
 }
 
 body {
   font-family: var(--font-sans);
+  background: var(--color-surface-base);
+}
+
+/* Reusable surface card */
+.card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Hero gradient: warm crimson wash for emotional urgency */
+.hero-gradient {
+  background:
+    radial-gradient(
+      120% 150% at 100% 0%,
+      rgb(225 29 72 / 0.4) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      135deg,
+      var(--color-hero-from) 0%,
+      var(--color-hero-via) 55%,
+      var(--color-hero-to) 100%
+    );
+}
+
+/* Subtle warm radial tint used behind secondary panels */
+.tint-gradient {
+  background:
+    radial-gradient(
+      80% 120% at 0% 0%,
+      rgb(225 29 72 / 0.08) 0%,
+      transparent 55%
+    ),
+    var(--color-surface-base);
+}
+
+.text-balance {
+  text-wrap: balance;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -74,7 +74,7 @@ export default function DonorRegistrationPage() {
 
   if (status === "loading") {
     return (
-      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
+      <main className="flex min-h-[70vh] items-center justify-center px-4 py-10 sm:px-8">
         <p className="text-body text-ink-secondary">Loading…</p>
       </main>
     );
@@ -82,14 +82,17 @@ export default function DonorRegistrationPage() {
 
   if (!session?.user) {
     return (
-      <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-heading text-ink-primary">Donor Registration</h1>
-          <p className="text-body text-ink-secondary">
-            Sign in with Google to register as a blood donor.
-          </p>
+      <main className="tint-gradient flex min-h-[70vh] items-center justify-center px-4 py-10 sm:px-8">
+        <div className="card flex w-full max-w-140 flex-col gap-6 p-6 sm:p-8">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-display text-ink-primary">Donor Registration</h1>
+            <p className="text-body text-ink-secondary">
+              Sign in with Google to register as a blood donor. Your details are
+              prefilled automatically — no OTP needed.
+            </p>
+          </div>
+          <GoogleSignInButton />
         </div>
-        <GoogleSignInButton />
       </main>
     );
   }
@@ -161,144 +164,152 @@ export default function DonorRegistrationPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-8 sm:px-8">
-      <h1 className="text-heading text-ink-primary">Donor Registration</h1>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
-        <InputField
-          id="name"
-          label="Name"
-          value={form.name}
-          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-          onBlur={() => markTouched("name")}
-          error={fieldErrors.name}
-        />
-
-        <InputField
-          id="phone"
-          label="Phone number"
-          placeholder="+923001234567"
-          value={form.phone}
-          onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-          onBlur={() => markTouched("phone")}
-          error={fieldErrors.phone}
-        />
-
-        <InputField
-          id="email"
-          label="Email"
-          optional
-          type="email"
-          value={form.email}
-          onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-          onBlur={() => markTouched("email")}
-          error={fieldErrors.email}
-        />
-
+    <main className="tint-gradient px-4 py-10 sm:px-8">
+      <div className="mx-auto flex w-full max-w-140 flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-label text-ink-primary" htmlFor="bloodType">
-            Blood type
-          </label>
-          <select
-            id="bloodType"
-            value={form.bloodType}
-            onChange={(e) => setForm((prev) => ({ ...prev, bloodType: e.target.value }))}
-            onBlur={() => markTouched("bloodType")}
-            aria-invalid={fieldErrors.bloodType ? "true" : "false"}
-            aria-describedby={fieldErrors.bloodType ? "bloodType-error" : undefined}
-            className="min-h-[48px] rounded-sm border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary focus:border-accent focus:outline-none"
-          >
-            <option value="">Select blood type</option>
-            {BLOOD_TYPE_VALUES.map((bt) => (
-              <option key={bt} value={bt}>
-                {BLOOD_TYPE_LABELS[bt]}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.bloodType && (
-            <p id="bloodType-error" role="alert" className="text-meta text-status-error">
-              {fieldErrors.bloodType}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span id="areas-label" className="text-label text-ink-primary">
-            Areas
-          </span>
-          <div role="group" aria-labelledby="areas-label" className="flex flex-wrap gap-2">
-            {AREA_VALUES.map((area) => (
-              <AreaChip
-                key={area}
-                label={AREA_LABELS[area]}
-                selected={form.areas.includes(area)}
-                onToggle={() => {
-                  toggleArea(area);
-                }}
-              />
-            ))}
-          </div>
-          {fieldErrors.areas && (
-            <p role="alert" className="text-meta text-status-error">
-              {fieldErrors.areas}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-label text-ink-primary" htmlFor="lastDonationDate">
-            Last donation date
-          </label>
-          <input
-            id="lastDonationDate"
-            type="date"
-            disabled={form.neverDonated}
-            value={form.lastDonationDate}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, lastDonationDate: e.target.value }))
-            }
-            onBlur={() => markTouched("lastDonationDate")}
-            aria-invalid={fieldErrors.lastDonationDate ? "true" : "false"}
-            aria-describedby={
-              fieldErrors.lastDonationDate ? "lastDonationDate-error" : undefined
-            }
-            className="min-h-[48px] rounded-sm border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary focus:border-accent focus:outline-none disabled:text-ink-disabled"
-          />
-          {fieldErrors.lastDonationDate && (
-            <p
-              id="lastDonationDate-error"
-              role="alert"
-              className="text-meta text-status-error"
-            >
-              {fieldErrors.lastDonationDate}
-            </p>
-          )}
-          <label className="flex items-center gap-2 text-body text-ink-primary">
-            <input
-              type="checkbox"
-              checked={form.neverDonated}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  neverDonated: e.target.checked,
-                  lastDonationDate: e.target.checked ? "" : prev.lastDonationDate,
-                }))
-              }
-            />
-            Never / not recently
-          </label>
-        </div>
-
-        {submitError && (
-          <p role="alert" className="text-meta text-status-error">
-            {submitError}
+          <h1 className="text-display text-ink-primary">Become a donor</h1>
+          <p className="text-body text-ink-secondary">
+            {session.user.name ? `${session.user.name}, add your` : "Add your"}{" "}
+            blood type and areas so people nearby can find you in seconds.
           </p>
-        )}
+        </div>
 
-        <Button disabled={!isValid} loading={isSubmitting}>
-          Submit
-        </Button>
-      </form>
+        <form onSubmit={handleSubmit} className="card flex flex-col gap-6 p-6 sm:p-8" noValidate>
+          <InputField
+            id="name"
+            label="Name"
+            value={form.name}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            onBlur={() => markTouched("name")}
+            error={fieldErrors.name}
+          />
+
+          <InputField
+            id="phone"
+            label="Phone number"
+            placeholder="+923001234567"
+            value={form.phone}
+            onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+            onBlur={() => markTouched("phone")}
+            error={fieldErrors.phone}
+          />
+
+          <InputField
+            id="email"
+            label="Email"
+            optional
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+            onBlur={() => markTouched("email")}
+            error={fieldErrors.email}
+          />
+
+          <div className="flex flex-col gap-2">
+            <label className="text-label text-ink-primary" htmlFor="bloodType">
+              Blood type
+            </label>
+            <select
+              id="bloodType"
+              value={form.bloodType}
+              onChange={(e) => setForm((prev) => ({ ...prev, bloodType: e.target.value }))}
+              onBlur={() => markTouched("bloodType")}
+              aria-invalid={fieldErrors.bloodType ? "true" : "false"}
+              aria-describedby={fieldErrors.bloodType ? "bloodType-error" : undefined}
+              className="min-h-[48px] rounded-lg border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary shadow-sm focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring"
+            >
+              <option value="">Select blood type</option>
+              {BLOOD_TYPE_VALUES.map((bt) => (
+                <option key={bt} value={bt}>
+                  {BLOOD_TYPE_LABELS[bt]}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.bloodType && (
+              <p id="bloodType-error" role="alert" className="text-meta text-status-error">
+                {fieldErrors.bloodType}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span id="areas-label" className="text-label text-ink-primary">
+              Areas
+            </span>
+            <div role="group" aria-labelledby="areas-label" className="flex flex-wrap gap-2">
+              {AREA_VALUES.map((area) => (
+                <AreaChip
+                  key={area}
+                  label={AREA_LABELS[area]}
+                  selected={form.areas.includes(area)}
+                  onToggle={() => {
+                    toggleArea(area);
+                  }}
+                />
+              ))}
+            </div>
+            {fieldErrors.areas && (
+              <p role="alert" className="text-meta text-status-error">
+                {fieldErrors.areas}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-label text-ink-primary" htmlFor="lastDonationDate">
+              Last donation date
+            </label>
+            <input
+              id="lastDonationDate"
+              type="date"
+              disabled={form.neverDonated}
+              value={form.lastDonationDate}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, lastDonationDate: e.target.value }))
+              }
+              onBlur={() => markTouched("lastDonationDate")}
+              aria-invalid={fieldErrors.lastDonationDate ? "true" : "false"}
+              aria-describedby={
+                fieldErrors.lastDonationDate ? "lastDonationDate-error" : undefined
+              }
+              className="min-h-[48px] rounded-lg border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary shadow-sm focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring disabled:text-ink-disabled"
+            />
+            {fieldErrors.lastDonationDate && (
+              <p
+                id="lastDonationDate-error"
+                role="alert"
+                className="text-meta text-status-error"
+              >
+                {fieldErrors.lastDonationDate}
+              </p>
+            )}
+            <label className="flex items-center gap-2 text-body text-ink-primary">
+              <input
+                type="checkbox"
+                checked={form.neverDonated}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    neverDonated: e.target.checked,
+                    lastDonationDate: e.target.checked ? "" : prev.lastDonationDate,
+                  }))
+                }
+              />
+              Never / not recently
+            </label>
+          </div>
+
+          {submitError && (
+            <p role="alert" className="text-meta text-status-error">
+              {submitError}
+            </p>
+          )}
+
+          <Button disabled={!isValid} loading={isSubmitting}>
+            Submit
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }

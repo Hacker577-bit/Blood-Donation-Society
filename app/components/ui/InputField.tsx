@@ -28,7 +28,7 @@ export function InputField({
         id={id}
         aria-invalid={error ? "true" : "false"}
         aria-describedby={errorId}
-        className={`min-h-[48px] rounded-sm border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary focus:border-accent focus:outline-none ${className}`}
+        className={`min-h-[48px] rounded-lg border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary shadow-sm placeholder:text-ink-disabled focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring ${className}`}
         {...rest}
       />
       {error && (

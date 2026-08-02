@@ -20,7 +20,7 @@ export function Button({
       type="submit"
       disabled={disabled || loading}
       aria-busy={loading ? "true" : "false"}
-      className={`flex w-full min-h-[48px] items-center justify-center gap-2 rounded-md bg-accent text-accent-on text-body font-semibold hover:bg-accent-hover disabled:bg-ink-disabled disabled:hover:bg-ink-disabled transition-colors motion-reduce:transition-none ${className}`}
+      className={`flex w-full min-h-[48px] items-center justify-center gap-2 rounded-lg bg-accent text-accent-on text-body font-semibold shadow-glow hover:bg-accent-hover disabled:bg-ink-disabled disabled:shadow-none disabled:hover:bg-ink-disabled transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${className}`}
       {...rest}
     >
       {loading && (

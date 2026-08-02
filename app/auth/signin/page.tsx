@@ -15,21 +15,29 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-105 flex-col gap-6 px-4 py-8 sm:px-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-display text-ink-primary">Sign in</h1>
-        <p className="text-body text-ink-secondary">
-          Use your Google account to register as a donor or search for blood.
+    <main className="tint-gradient flex min-h-[70vh] items-center justify-center px-4 py-10 sm:px-8">
+      <div className="card flex w-full max-w-105 flex-col gap-6 p-6 sm:p-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-display text-ink-primary">Sign in</h1>
+          <p className="text-body text-ink-secondary">
+            Use your Google account to register as a donor or search for blood.
+            No OTP, no phone codes — just one tap.
+          </p>
+        </div>
+
+        {error ? (
+          <p className="rounded-lg border border-status-error/40 bg-status-error-bg px-4 py-3 text-body text-status-error">
+            Sign-in failed. Please try again.
+          </p>
+        ) : null}
+
+        <GoogleSignInButton />
+
+        <p className="text-meta text-ink-secondary">
+          Your Google name and email are prefilled automatically so registration
+          takes seconds, not minutes.
         </p>
       </div>
-
-      {error ? (
-        <p className="rounded-xl border border-border-critical bg-surface-critical px-4 py-3 text-body text-ink-critical">
-          Sign-in failed. Please try again.
-        </p>
-      ) : null}
-
-      <GoogleSignInButton />
     </main>
   );
 }
