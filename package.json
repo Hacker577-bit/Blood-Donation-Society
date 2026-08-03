@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "vitest run",
     "postinstall": "prisma generate",
-    "cleanup:searches": "npx tsx scripts/cleanup-searches.ts"
+    "cleanup:searches": "npx tsx scripts/cleanup-searches.ts",
+    "db:seed": "npx tsx scripts/seed-donors.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

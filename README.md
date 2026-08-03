@@ -106,8 +106,29 @@ npm run dev          # Development server
 npm run build        # Production build
 npm run start        # Start production server
 npm test             # Run tests
+npm run db:seed      # Insert/update donors from scripts/donors.csv
 npm run cleanup:searches  # Purge old Search records
 ```
+
+## Managing Donor Data
+
+Donors can be added in two ways:
+
+1. **Self-registration (recommended):** Donors sign in with Google on the app
+   and fill the registration form. Records are created automatically.
+2. **Seed script:** Add rows to `scripts/donors.csv` (name, phone, bloodType,
+   semicolon-separated areas, lastDonationDate, email) and run
+   `npm run db:seed` with `DATABASE_URL` set. Rows are upserted by phone number,
+   so re-running is safe. Example:
+   ```bash
+   DATABASE_URL=postgresql://... npm run db:seed
+   ```
+
+Phone numbers must be international format (`+92...`). Blood types use the enum
+codes `A_POS`, `A_NEG`, `B_POS`, `B_NEG`, `AB_POS`, `AB_NEG`, `O_POS`, `O_NEG`.
+Areas are one or more of `JoharTown;DHA;Gulberg;ModelTown;BahriaTown;Cantt;IqbalTown;GardenTown;WapdaTown;FaisalTown`.
+Leave `lastDonationDate` empty for donors who have never donated. The 90-day
+eligibility window is computed automatically at search time.
 
 ## Docker
 
