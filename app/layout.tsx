@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/app/components/providers/AuthProvider";
+import { ToastProvider } from "@/app/components/ui/Toast";
 import { SiteHeader } from "@/app/components/ui/SiteHeader";
 import { SiteFooter } from "@/app/components/ui/SiteFooter";
 
@@ -18,9 +19,11 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-surface-base text-ink-primary font-sans">
         <AuthProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
+          <ToastProvider>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

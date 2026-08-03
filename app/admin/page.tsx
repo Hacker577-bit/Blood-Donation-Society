@@ -28,7 +28,9 @@ export default async function AdminPage() {
 
   const donors = (await listAllDonors()).map((donor) => ({
     ...donor,
-    lastDonationDate: donor.lastDonationDate?.toISOString() ?? null,
+    lastDonationDate: donor.lastDonationDate
+      ? new Date(donor.lastDonationDate).toISOString()
+      : null,
   }));
 
   return <AdminDashboard donors={donors} />;

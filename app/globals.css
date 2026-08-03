@@ -1,45 +1,66 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+/* ============================================================
+   Lifeline Lahore — Premium Healthcare Design System
+   Palette: deep red primary, crisp whites, warm neutrals,
+   emerald/sky supports. Dark mode auto-adapts via CSS vars.
+   ============================================================ */
 
-  /* Colors — DESIGN.md token set (accent re-themed to a warm blood red) */
-  --color-surface-base: #faf8f7;
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+
+  /* --- Surfaces (light mode) --- */
+  --color-surface-base: #f6f7f9;
   --color-surface-raised: #ffffff;
-  --color-surface-overlay: #f4efee;
-  --color-ink-primary: #1c1917;
-  --color-ink-secondary: #57534e;
-  --color-ink-disabled: #a8a29e;
-  --color-border-hairline: #e7e5e4;
-  --color-accent: #e11d48;
-  --color-accent-hover: #be123c;
+  --color-surface-overlay: #eef0f3;
+  --color-surface-glass: #ffffffcc;
+
+  /* --- Ink (text) --- */
+  --color-ink-primary: #1c1e21;
+  --color-ink-secondary: #5b6470;
+  --color-ink-disabled: #a6aeba;
+
+  --color-border-hairline: #e5e7eb;
+
+  /* --- Brand: Deep Red primary, soft crimson accent --- */
+  --color-accent: #c62828;
+  --color-accent-hover: #a51f1f;
   --color-accent-on: #ffffff;
-  --color-accent-soft: #ffe4e6;
-  --color-blood: #be123c;
-  --color-blood-deep: #881337;
+  --color-accent-soft: #fdecec;
+  --color-blood: #b71c1c;
+  --color-blood-deep: #7f1d1d;
+
+  /* --- Status + support colors --- */
   --color-status-success: #15803d;
   --color-status-success-bg: #dcfce7;
   --color-status-caution: #b45309;
   --color-status-caution-bg: #fef3c7;
   --color-status-error: #b91c1c;
   --color-status-error-bg: #fee2e2;
-  --color-focus-ring: #e11d48;
-  --color-hero-from: #7f1d2d;
-  --color-hero-via: #be123c;
-  --color-hero-to: #e11d48;
+  --color-emerald: #10b981;
+  --color-emerald-soft: #ecfdf5;
+  --color-sky: #0284c7;
+  --color-sky-soft: #e0f2fe;
 
-  /* Typography scale — DESIGN.md token set */
-  --text-display: 28px;
-  --text-display--line-height: 1.2;
-  --text-display--font-weight: 700;
+  --color-focus-ring: #c62828;
 
-  --text-heading: 20px;
+  /* --- Hero gradient (warm crimson → deep red) --- */
+  --color-hero-from: #7f1d1d;
+  --color-hero-via: #a51f1f;
+  --color-hero-to: #c62828;
+
+  /* --- Typography scale --- */
+  --text-display: 34px;
+  --text-display--line-height: 1.15;
+  --text-display--font-weight: 750;
+
+  --text-heading: 22px;
   --text-heading--line-height: 1.3;
-  --text-heading--font-weight: 600;
+  --text-heading--font-weight: 650;
 
   --text-body: 16px;
-  --text-body--line-height: 1.5;
+  --text-body--line-height: 1.55;
   --text-body--font-weight: 400;
 
   --text-body-large: 18px;
@@ -47,21 +68,31 @@
   --text-body-large--font-weight: 400;
 
   --text-meta: 14px;
-  --text-meta--line-height: 1.4;
+  --text-meta--line-height: 1.5;
   --text-meta--font-weight: 400;
 
   --text-label: 13px;
   --text-label--line-height: 1.3;
   --text-label--font-weight: 600;
-  --text-label--letter-spacing: 0.02em;
+  --text-label--letter-spacing: 0.03em;
 
-  /* Rounded scale — DESIGN.md token set */
+  --text-button: 16px;
+  --text-button--line-height: 1.2;
+  --text-button--font-weight: 600;
+
+  /* --- Rounded scale --- */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-full: 9999px;
 
-  /* Spacing scale — DESIGN.md token set (non-linear past step 4, do not rely on Tailwind's default multiplier) */
+  /* --- Shadows: soft, layered, premium --- */
+  --shadow-card: 0 1px 2px rgb(28 30 33 / 0.04), 0 8px 24px -12px rgb(28 30 33 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(28 30 33 / 0.06), 0 18px 40px -18px rgb(28 30 33 / 0.22);
+  --shadow-glow: 0 10px 34px -12px rgb(198 40 40 / 0.45);
+  --shadow-hero: 0 24px 60px -24px rgb(127 29 29 / 0.55);
+
+  /* --- Spacing scale (Tailwind default multiplier preserved) --- */
   --spacing-1: 4px;
   --spacing-2: 8px;
   --spacing-3: 12px;
@@ -72,19 +103,90 @@
   --spacing-gutter: 16px;
   --spacing-margin-mobile: 16px;
   --spacing-margin-desktop: 32px;
+}
 
-  /* Shadows */
-  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.05), 0 14px 34px -18px rgb(136 19 55 / 0.28);
-  --shadow-hero: 0 24px 60px -24px rgb(127 29 45 / 0.55);
-  --shadow-glow: 0 10px 34px -12px rgb(225 29 72 / 0.45);
+/* ============================================================
+   Dark mode — premium, not inverted. Red becomes luminous so it
+   keeps contrast on dark ink; surfaces stay deep, never pure black.
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-base: #101216;
+    --color-surface-raised: #181b21;
+    --color-surface-overlay: #20242c;
+    --color-surface-glass: #181b21cc;
+
+    --color-ink-primary: #f2f4f7;
+    --color-ink-secondary: #a9b1bd;
+    --color-ink-disabled: #5d6672;
+
+    --color-border-hairline: #2a2f38;
+
+    --color-accent: #e05252;
+    --color-accent-hover: #ef6a6a;
+    --color-accent-on: #ffffff;
+    --color-accent-soft: #3a1d1d;
+    --color-blood: #d64a4a;
+    --color-blood-deep: #7f1d1d;
+
+    --color-status-success: #4ade80;
+    --color-status-success-bg: #123522;
+    --color-status-caution: #fbbf24;
+    --color-status-caution-bg: #3a2f12;
+    --color-status-error: #f87171;
+    --color-status-error-bg: #3a1616;
+    --color-emerald: #34d399;
+    --color-emerald-soft: #0e2b22;
+    --color-sky: #38bdf8;
+    --color-sky-soft: #0e2531;
+
+    --color-focus-ring: #e05252;
+
+    --color-hero-from: #5c1616;
+    --color-hero-via: #8f1c1c;
+    --color-hero-to: #c62828;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 18px 40px -18px rgb(0 0 0 / 0.6);
+    --shadow-glow: 0 10px 34px -12px rgb(224 82 82 / 0.35);
+    --shadow-hero: 0 24px 60px -24px rgb(0 0 0 / 0.6);
+  }
 }
 
 body {
   font-family: var(--font-sans);
   background: var(--color-surface-base);
+  color: var(--color-ink-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Reusable surface card */
+/* Accessible, brand-colored selection */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+}
+
+/* Thin, unobtrusive scrollbar that matches the surface */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-hairline) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-hairline);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============================================================
+   Reusable surfaces
+   ============================================================ */
 .card {
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border-hairline);
@@ -92,12 +194,25 @@ body {
   box-shadow: var(--shadow-card);
 }
 
+/* Hover-lift card: gentle rise + deeper shadow on interactive cards */
+.card-hover {
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.22s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-border-hairline));
+}
+
 /* Hero gradient: warm crimson wash for emotional urgency */
 .hero-gradient {
   background:
     radial-gradient(
       120% 150% at 100% 0%,
-      rgb(225 29 72 / 0.4) 0%,
+      rgb(224 82 82 / 0.35) 0%,
       transparent 55%
     ),
     linear-gradient(
@@ -113,14 +228,158 @@ body {
   background:
     radial-gradient(
       80% 120% at 0% 0%,
-      rgb(225 29 72 / 0.08) 0%,
+      color-mix(in srgb, var(--color-accent) 8%, transparent) 0%,
       transparent 55%
     ),
     var(--color-surface-base);
 }
 
+/* Frosted glass (navbars, sticky panels) */
+.glass {
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
 .text-balance {
   text-wrap: balance;
+}
+
+/* ============================================================
+   Motion primitives (CSS-only, 200–300ms, reduced-motion safe)
+   ============================================================ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes gradient-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.28s ease both;
+}
+.animate-fade-up {
+  animation: fade-up 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.animate-scale-in {
+  animation: scale-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-overlay) 25%,
+    color-mix(in srgb, var(--color-surface-overlay) 60%, var(--color-surface-raised)) 37%,
+    var(--color-surface-overlay) 63%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-drift 8s ease infinite;
+}
+
+/* Scroll-reveal: element starts hidden; JS adds .is-visible */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Button ripple surface */
+.ripple-ink {
+  position: absolute;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.25;
+  transform: scale(0);
+  animation: ripple 0.55s ease-out forwards;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -131,5 +390,9 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

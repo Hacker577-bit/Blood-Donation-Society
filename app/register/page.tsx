@@ -7,6 +7,7 @@ import { Button } from "@/app/components/ui/Button";
 import { InputField } from "@/app/components/ui/InputField";
 import { AreaChip } from "@/app/components/ui/AreaChip";
 import { GoogleSignInButton } from "@/app/components/ui/GoogleSignInButton";
+import { Card } from "@/app/components/ui/Card";
 import {
   registerDonorSchema,
   AREA_VALUES,
@@ -83,8 +84,11 @@ export default function DonorRegistrationPage() {
   if (!session?.user) {
     return (
       <main className="tint-gradient flex min-h-[70vh] items-center justify-center px-4 py-10 sm:px-8">
-        <div className="card flex w-full max-w-140 flex-col gap-6 p-6 sm:p-8">
+        <Card padding="lg" className="flex w-full max-w-140 flex-col gap-6">
           <div className="flex flex-col gap-2">
+            <p className="text-label font-semibold uppercase tracking-wide text-accent">
+              Donor registration
+            </p>
             <h1 className="text-display text-ink-primary">Donor Registration</h1>
             <p className="text-body text-ink-secondary">
               Sign in with Google to register as a blood donor. Your details are
@@ -92,7 +96,7 @@ export default function DonorRegistrationPage() {
             </p>
           </div>
           <GoogleSignInButton />
-        </div>
+        </Card>
       </main>
     );
   }
@@ -167,6 +171,9 @@ export default function DonorRegistrationPage() {
     <main className="tint-gradient px-4 py-10 sm:px-8">
       <div className="mx-auto flex w-full max-w-140 flex-col gap-6">
         <div className="flex flex-col gap-2">
+          <p className="text-label font-semibold uppercase tracking-wide text-accent">
+            Donor registration
+          </p>
           <h1 className="text-display text-ink-primary">Become a donor</h1>
           <p className="text-body text-ink-secondary">
             {session.user.name ? `${session.user.name}, add your` : "Add your"}{" "}
@@ -216,7 +223,7 @@ export default function DonorRegistrationPage() {
               onBlur={() => markTouched("bloodType")}
               aria-invalid={fieldErrors.bloodType ? "true" : "false"}
               aria-describedby={fieldErrors.bloodType ? "bloodType-error" : undefined}
-              className="min-h-[48px] rounded-lg border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary shadow-sm focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring"
+              className="min-h-[48px] w-full rounded-lg border border-border-hairline bg-surface-raised px-3.5 text-body text-ink-primary shadow-card transition-colors duration-200 focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring"
             >
               <option value="">Select blood type</option>
               {BLOOD_TYPE_VALUES.map((bt) => (
@@ -272,7 +279,7 @@ export default function DonorRegistrationPage() {
               aria-describedby={
                 fieldErrors.lastDonationDate ? "lastDonationDate-error" : undefined
               }
-              className="min-h-[48px] rounded-lg border border-border-hairline bg-surface-raised px-3 text-body text-ink-primary shadow-sm focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring disabled:text-ink-disabled"
+              className="min-h-[48px] w-full rounded-lg border border-border-hairline bg-surface-raised px-3.5 text-body text-ink-primary shadow-card transition-colors duration-200 focus:border-accent focus:outline-2 focus:outline-offset-1 focus:outline-focus-ring disabled:text-ink-disabled"
             />
             {fieldErrors.lastDonationDate && (
               <p
@@ -294,6 +301,7 @@ export default function DonorRegistrationPage() {
                     lastDonationDate: e.target.checked ? "" : prev.lastDonationDate,
                   }))
                 }
+                className="size-4 rounded border-border-hairline accent-accent"
               />
               Never / not recently
             </label>

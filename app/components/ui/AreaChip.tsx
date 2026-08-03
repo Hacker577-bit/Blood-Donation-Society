@@ -13,10 +13,10 @@ export function AreaChip({ label, selected, onToggle }: AreaChipProps) {
       role="checkbox"
       aria-checked={selected ? "true" : "false"}
       onClick={onToggle}
-      className={`min-h-[44px] min-w-[44px] rounded-full border px-4 text-body font-medium transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${
+      className={`min-h-[44px] min-w-[44px] rounded-full border px-4 text-body font-medium transition-all duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${
         selected
-          ? "bg-accent text-accent-on border-accent shadow-glow"
-          : "bg-surface-raised text-ink-primary border-border-hairline hover:border-accent hover:text-accent"
+          ? "border-accent bg-accent text-accent-on shadow-glow"
+          : "border-border-hairline bg-surface-raised text-ink-primary shadow-card hover:-translate-y-0.5 hover:border-accent/60 hover:text-accent"
       }`}
     >
       {label}
