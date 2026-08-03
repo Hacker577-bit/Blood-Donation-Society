@@ -6,8 +6,8 @@ import { Reveal } from "@/app/components/ui/Reveal";
 const forkBase =
   "inline-flex w-full min-h-[48px] items-center justify-center gap-2 rounded-lg px-6 text-button font-semibold transition-all duration-200 motion-reduce:transition-none hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
-const primaryFork = `${forkBase} bg-accent text-accent-on shadow-glow hover:bg-accent-hover`;
-const secondaryFork = `${forkBase} border border-white/40 bg-white/95 text-ink-primary shadow-card hover:bg-white`;
+const primaryFork = `${forkBase} bg-white text-accent shadow-lift hover:bg-white/90`;
+const secondaryFork = `${forkBase} border border-white/35 bg-white/10 text-white backdrop-blur hover:bg-white/15 hover:border-white/50`;
 
 const STATS = [
   { value: "8", label: "Blood types", tone: "brand" as const },

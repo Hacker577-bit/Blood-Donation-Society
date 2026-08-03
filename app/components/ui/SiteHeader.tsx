@@ -30,7 +30,7 @@ export function SiteHeader() {
   }, [menuOpen]);
 
   return (
-    <header className="glass sticky top-0 z-50 border-b border-border-hairline">
+    <header className="glass border-b border-border-hairline">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8">
         <Link
           href="/"

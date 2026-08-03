@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import { ToastProvider } from "@/app/components/ui/Toast";
 import { SiteHeader } from "@/app/components/ui/SiteHeader";
 import { SiteFooter } from "@/app/components/ui/SiteFooter";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Lifeline Lahore",
@@ -16,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col bg-surface-base text-ink-primary font-sans">
         <AuthProvider>
           <ToastProvider>
