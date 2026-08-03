@@ -65,6 +65,7 @@ Open [http://localhost:3000](http://localhost:3000).
 app/                 # Next.js App Router pages and Server Actions
   actions/           # Server Actions (register, search, OTP, etc.)
   components/ui/     # Reusable UI components
+  admin/             # Password-protected donor management
   manage/            # Self-service dashboard
   register/          # Donor registration flow
   search/            # Search flow
@@ -112,17 +113,24 @@ npm run cleanup:searches  # Purge old Search records
 
 ## Managing Donor Data
 
-Donors can be added in two ways:
+Donors can be added in three ways:
 
 1. **Self-registration (recommended):** Donors sign in with Google on the app
    and fill the registration form. Records are created automatically.
-2. **Seed script:** Add rows to `scripts/donors.csv` (name, phone, bloodType,
+2. **Admin panel:** Open `/admin`, sign in with the shared `ADMIN_PASSWORD`,
+   and add/delete donors straight from the web. Great for the society admin.
+3. **Seed script:** Add rows to `scripts/donors.csv` (name, phone, bloodType,
    semicolon-separated areas, lastDonationDate, email) and run
    `npm run db:seed` with `DATABASE_URL` set. Rows are upserted by phone number,
    so re-running is safe. Example:
    ```bash
    DATABASE_URL=postgresql://... npm run db:seed
    ```
+
+To use the admin panel, set `ADMIN_PASSWORD` in your environment (Vercel →
+Project → Settings → Environment Variables) and visit `https://<your-app>.vercel.app/admin`.
+Admin sessions last 12 hours and are secured with an httpOnly, signed cookie
+(backed by `AUTH_SECRET`).
 
 Phone numbers must be international format (`+92...`). Blood types use the enum
 codes `A_POS`, `A_NEG`, `B_POS`, `B_NEG`, `AB_POS`, `AB_NEG`, `O_POS`, `O_NEG`.

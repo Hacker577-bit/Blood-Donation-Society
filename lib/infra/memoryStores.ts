@@ -97,6 +97,10 @@ export const memoryDonorRepository = {
     donors.delete(id);
   },
 
+  async listAll() {
+    return [...donors.values()];
+  },
+
   async findEligibleMatches(bloodType: string, area: string) {
     const results: Array<{ name: string; phone: string; email: string | null; area: string }> = [];
     for (const donor of donors.values()) {

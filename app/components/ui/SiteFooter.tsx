@@ -27,6 +27,12 @@ export function SiteFooter() {
           >
             Dashboard
           </Link>
+          <Link
+            href="/admin"
+            className="text-ink-secondary underline-offset-2 hover:text-ink-primary hover:underline"
+          >
+            Admin
+          </Link>
         </nav>
       </div>
     </footer>

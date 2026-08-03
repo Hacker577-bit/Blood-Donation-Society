@@ -41,6 +41,17 @@ export interface DonorMatchCandidateRecord {
   lastDonationDate: Date | null;
 }
 
+export interface AdminDonorRecord {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  bloodType: BloodType;
+  lastDonationDate: Date | null;
+  isVerified: boolean;
+  areas: Area[];
+}
+
 export async function createDonor(input: CreateDonorInput): Promise<CreatedDonor> {
   if (input.areas.length === 0) {
     throw new Error("createDonor requires at least one area.");
@@ -156,6 +167,41 @@ export async function findVerifiedDonorsByBloodTypeAndArea({
     },
     select: { name: true, phone: true, email: true, lastDonationDate: true },
   });
+}
+
+export async function listAllDonors(): Promise<AdminDonorRecord[]> {
+  if (isDevFallback) {
+    const all = await memoryDonorRepository.listAll();
+    return all.map((d) => ({
+      id: d.id,
+      name: d.name,
+      phone: d.phone,
+      email: d.email,
+      bloodType: d.bloodType as BloodType,
+      lastDonationDate: d.lastDonationDate ? new Date(d.lastDonationDate) : null,
+      isVerified: d.isVerified,
+      areas: d.areas as Area[],
+    }));
+  }
+
+  const donors = await prisma.donor.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      bloodType: true,
+      lastDonationDate: true,
+      isVerified: true,
+      areas: { select: { area: true } },
+    },
+  });
+
+  return donors.map((d) => ({
+    ...d,
+    areas: d.areas.map((a) => a.area),
+  }));
 }
 
 export async function findDonorWithAreas(id: string): Promise<DonorWithAreas | null> {
